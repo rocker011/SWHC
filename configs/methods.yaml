@@ -1,0 +1,16 @@
+baselines:
+  - NaiveGeneration
+  - BM25
+  - StandardRAG
+  - HybridRAG
+  - GraphRAG
+  - LightRAG
+  - PathRAG
+  - HyperGraphRAG
+target:
+  - SWHC
+variants:
+  - SWHC-Legacy
+  - SWHC-HyperDistance
+  - SWHC-EvidenceCompression
+

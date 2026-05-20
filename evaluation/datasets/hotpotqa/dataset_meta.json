@@ -1,0 +1,13 @@
+{
+  "source": "Hugging Face Dataset Viewer",
+  "hf_dataset": "hotpotqa/hotpot_qa",
+  "config": "distractor",
+  "split": "validation",
+  "start_offset": 0,
+  "sample_size": 512,
+  "context_mode": "bundle",
+  "total_rows_reported": 7405,
+  "context_documents": 512,
+  "question_file": "D:/PythonProjects/HyperGraphRAG/evaluation/datasets/hotpotqa/questions.json",
+  "context_file": "D:/PythonProjects/HyperGraphRAG/evaluation/contexts/hotpotqa_contexts.json"
+}

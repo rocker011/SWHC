@@ -1,0 +1,1665 @@
+# EXPERIMENT_LOG.md
+
+## Purpose
+This file is the append-only experiment notebook for the project.
+
+Use it to record:
+- what was run
+- with which configuration
+- on which dataset
+- what happened
+- what to do next
+
+Keep it short, factual, and easy to scan.
+
+Raw outputs belong under:
+- `evaluation/results/...`
+
+This file is the human-readable summary.
+
+## Logging rules
+For each experiment, record:
+
+1. date
+2. method
+3. dataset
+4. stage
+   - `Step1 / Step2 / Step3 / Step4 / Step5`
+5. code version
+   - git commit
+   - branch if useful
+6. command
+7. important config
+   - model
+   - embedding
+   - whether `LLM judge` was enabled
+   - key method flags
+   - seed if relevant
+8. output
+   - directory
+   - key files
+9. result summary
+   - include `Average consumed tokens` when available
+10. outcome
+   - success / partial / failed
+11. next action
+
+For `SWHC` runs, also record when relevant:
+
+- `alpha`
+- `beta`
+- `gamma`
+- `edge_weight_floor` / $\varepsilon$
+- `hop_cost` / $c_{\text{hop}}$
+- whether the semantic edge-weighting formula changed
+- whether the solver behavior changed
+
+If the objective or solver changed, note clearly that results before and after the change are not directly comparable without qualification.
+
+## Entry template
+
+```md
+## YYYY-MM-DD - <method> - <dataset> - <stage>
+
+- Goal:
+- Code version:
+  - Git commit:
+  - Branch:
+- Command:
+- Config:
+  - API/model:
+  - Embedding:
+  - LLM judge:
+  - Seed:
+  - Other params:
+- Output:
+  - Directory:
+  - Files:
+- Result summary:
+  - Average consumed tokens:
+- Outcome:
+- Notes:
+- Next action:
+```
+
+## Milestone records
+
+## 2026-04-12 - HyperGraphRAG - hypertension - Step1~Step5
+
+- Goal:
+  - Run the original HyperGraphRAG pipeline end-to-end on `hypertension`
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - not recorded
+- Config:
+  - API/model: remote LLM pipeline at the time of run
+  - Embedding: local embedding pipeline
+  - LLM judge: enabled
+  - Seed: not recorded
+  - Other params: default HyperGraphRAG pipeline
+- Output:
+  - Directory:
+    - `evaluation/results/HyperGraphRAG/hypertension/`
+  - Files:
+    - `test_knowledge.json`
+    - `test_generation.json`
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - `EM = 21.29`
+  - `F1 = 34.40`
+  - `R-Sim = 66.53`
+  - `Gen = 55.63`
+- Outcome:
+  - success
+- Notes:
+  - this is the current main baseline reference point
+- Next action:
+  - compare directly against SWHC on the same dataset
+
+## 2026-04-12 - SWHC - hypertension - Step2~Step5
+
+- Goal:
+  - Run SWHC end-to-end on `hypertension`
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - not recorded
+- Config:
+  - API/model: remote LLM pipeline at the time of run
+  - Embedding: local embedding pipeline
+  - LLM judge: enabled
+  - Seed: not recorded
+  - Other params:
+    - `subgraph_selector="swhc"`
+- Output:
+  - Directory:
+    - `evaluation/results/SWHC/hypertension/`
+  - Files:
+    - `test_knowledge.json`
+    - `test_generation.json`
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - `EM = 24.41`
+  - `F1 = 37.60`
+  - `R-Sim = 69.33`
+  - `Gen = 55.67`
+- Outcome:
+  - success
+- Notes:
+  - current strongest evidence that SWHC is working as intended
+  - context size was greatly reduced relative to HyperGraphRAG
+- Next action:
+  - expand to stronger baselines and more datasets
+
+## 2026-04-16 - Infrastructure - DeepSeek official API migration
+
+- Goal:
+  - switch the project from the previous provider path to DeepSeek official API
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - not recorded
+- Config:
+  - API/model: `https://api.deepseek.com`
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: both supported after migration
+  - Seed: not applicable
+  - Other params:
+    - Main model: `deepseek-chat`
+    - Judge model: `deepseek-reasoner`
+- Output:
+  - Directory:
+    - repository config / backend code
+  - Files:
+    - backend and config changes
+- Result summary:
+  - official API connectivity verified
+- Outcome:
+  - success
+- Notes:
+  - official DeepSeek path is now the intended default
+- Next action:
+  - use this stack for subsequent experiments
+
+## 2026-04-16 - Infrastructure - Optional LLM judge switch
+
+- Goal:
+  - allow intermediate experiments to skip expensive `Gen` scoring
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - not recorded
+- Config:
+  - API/model: current DeepSeek default stack
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge:
+    - `--enable_llm_judge false`
+    - `HGRAG_ENABLE_LLM_JUDGE=false`
+  - Seed: not applicable
+  - Other params:
+    - `get_score.py` and `see_score.py` support no-judge runs
+- Output:
+  - Directory:
+    - scoring pipeline
+  - Files:
+    - scoring-related code updated
+- Result summary:
+  - intermediate scoring can now produce:
+    - `EM`
+    - `F1`
+    - `R-Sim`
+  - while recording `Gen = N/A`
+- Outcome:
+  - success
+- Notes:
+  - this should be the default for exploratory experiments
+- Next action:
+  - reserve `Gen` for final milestone runs
+
+## 2026-04-17 - Infrastructure - generation resume + realtime timeout
+
+- Goal:
+  - avoid rerunning successful generations and prevent single realtime calls from hanging an entire Step3 run
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - code change only
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: not applicable
+  - Seed: not applicable
+  - Other params:
+    - realtime timeout via `HGRAG_OPENAI_TIMEOUT_SECONDS` (default `180`)
+    - generation resume behavior skips successful samples and only regenerates missing or `[ERROR]` samples
+- Output:
+  - Directory:
+    - `evaluation/`
+  - Files:
+    - `get_generation.py`
+    - `inference_backend.py`
+- Result summary:
+  - Step3 can now resume from existing `test_generation.json`
+  - successful samples are no longer re-generated by default
+  - realtime requests now fail fast instead of hanging indefinitely
+- Outcome:
+  - success
+- Notes:
+  - this is an infrastructure change only; it does not change retrieval logic, SWHC objective, or scoring definitions
+- Next action:
+  - use the resume path for unfinished baseline runs
+
+## 2026-04-17 - Infrastructure - token usage recording
+
+- Goal:
+  - record per-sample generation token usage and aggregate `Average consumed tokens` in scoring outputs
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - code change only
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: not applicable
+  - Seed: not applicable
+  - Other params:
+    - Step3 persists provider `usage` when available
+    - Step4 aggregates `avg_consumed_tokens`
+- Output:
+  - Directory:
+    - `evaluation/`
+  - Files:
+    - `inference_backend.py`
+    - `get_generation.py`
+    - `get_score.py`
+    - `see_score.py`
+- Result summary:
+  - new Step3 outputs may include:
+    - `generation_usage`
+    - `consumed_prompt_tokens`
+    - `consumed_completion_tokens`
+    - `consumed_total_tokens`
+  - new Step4 outputs include:
+    - `avg_consumed_tokens`
+    - token-usage coverage counts
+- Outcome:
+  - success
+- Notes:
+  - this is an evaluation-infrastructure change only; it does not change retrieval logic, SWHC objective, solver behavior, or the definitions of `EM / F1 / R-Sim / Gen`
+  - historical runs without recorded Step3 usage will keep `avg_consumed_tokens = null` until Step3 is rerun
+- Next action:
+  - record `Average consumed tokens` in subsequent official experiment entries when available
+
+## 2026-04-17 - BM25 - hypertension - Step2
+
+- Goal:
+  - implement and run a lexical chunk-retrieval baseline on `hypertension`
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `conda run -n hypergraphrag python script_bm25.py --data_source hypertension`
+- Config:
+  - API/model: not used in Step2
+  - Embedding: not used in lexical retrieval
+  - LLM judge: disabled / not applicable
+  - Seed: not applicable
+  - Other params:
+    - `chunk_top_k = 60`
+    - `token_budget = 12000`
+- Output:
+  - Directory:
+    - `evaluation/results/BM25/hypertension/`
+  - Files:
+    - `test_knowledge.json`
+- Result summary:
+  - lexical retrieval output generated successfully in the standard `Sources`-only context format
+- Outcome:
+  - success
+- Notes:
+  - retrieval reuses the existing `kv_store_text_chunks.json` corpus without touching HyperGraphRAG / SWHC graph logic
+- Next action:
+  - run Step3 generation and no-judge Step4
+
+## 2026-04-17 - HybridRAG - hypertension - Step2
+
+- Goal:
+  - implement and run a `BM25 + Dense` chunk-fusion baseline on `hypertension`
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `conda run -n hypergraphrag python script_hybrid_rag.py --data_source hypertension`
+- Config:
+  - API/model: DeepSeek default stack loaded for dense query embedding path
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: disabled / not applicable
+  - Seed: not applicable
+  - Other params:
+    - `bm25_top_k = 60`
+    - `dense_top_k = 60`
+    - `token_budget = 12000`
+    - `rrf_k = 60`
+- Output:
+  - Directory:
+    - `evaluation/results/HybridRAG/hypertension/`
+  - Files:
+    - `test_knowledge.json`
+- Result summary:
+  - hybrid chunk retrieval completed successfully and produced standard Step2 output
+- Outcome:
+  - success
+- Notes:
+  - fusion is retrieval-side only and does not change downstream generation or scoring logic
+- Next action:
+  - run Step3 generation and no-judge Step4 once API balance is available
+
+## 2026-04-17 - NaiveGeneration / StandardRAG / HyperGraphRAG / SWHC - hypertension - Step4
+
+- Goal:
+  - refresh no-judge metrics under the current official intermediate setting
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `conda run -n hypergraphrag python get_score.py --data_source hypertension --method NaiveGeneration --enable_llm_judge false`
+  - `conda run -n hypergraphrag python get_score.py --data_source hypertension --method StandardRAG --enable_llm_judge false`
+  - `conda run -n hypergraphrag python get_score.py --data_source hypertension --method HyperGraphRAG --enable_llm_judge false`
+  - `conda run -n hypergraphrag python get_score.py --data_source hypertension --method SWHC --enable_llm_judge false`
+- Config:
+  - API/model: current DeepSeek default stack
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: disabled
+  - Seed: not applicable
+  - Other params:
+    - scoring outputs `EM / F1 / R-Sim`
+- Output:
+  - Directory:
+    - `evaluation/results/<Method>/hypertension/`
+  - Files:
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - `NaiveGeneration`: `EM = 6.05`, `F1 = 15.74`, `R-Sim = 0.00`, `Gen = N/A`
+  - `StandardRAG`: `EM = 13.87`, `F1 = 23.68`, `R-Sim = 63.70`, `Gen = N/A`
+  - `HyperGraphRAG`: `EM = 21.29`, `F1 = 34.40`, `R-Sim = 66.53`, `Gen = N/A`
+  - `SWHC`: `EM = 24.41`, `F1 = 37.60`, `R-Sim = 69.33`, `Gen = N/A`
+- Outcome:
+  - success
+- Notes:
+  - `StandardRAG` no-judge scoring completed successfully from the existing generation file
+- Next action:
+  - complete `BM25` and `HybridRAG` generation before producing the official comparison table
+
+## 2026-04-17 - BM25 - hypertension - Step3~Step4
+
+- Goal:
+  - run the first end-to-end `BM25` generation attempt on `hypertension`
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `set HGRAG_GENERATION_WORKERS=4`
+  - `set HGRAG_OPENAI_TIMEOUT_SECONDS=180`
+  - `conda run -n hypergraphrag python get_generation.py --data_sources hypertension --methods BM25`
+  - `conda run -n hypergraphrag python get_score.py --data_source hypertension --method BM25 --enable_llm_judge false`
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: disabled in Step4
+  - Seed: not applicable
+  - Other params:
+    - generation workers: `4`
+    - realtime timeout: `180s`
+- Output:
+  - Directory:
+    - `evaluation/results/BM25/hypertension/`
+  - Files:
+    - `test_generation.json`
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - successful generations before failure: `421 / 512`
+  - failed generations due `402 Insufficient Balance`: `91 / 512`
+  - partial lower-bound no-judge score:
+    - `EM = 4.69`
+    - `F1 = 16.57`
+    - `R-Sim = 61.80`
+    - `Gen = N/A`
+- Outcome:
+  - partial
+- Notes:
+  - this score is **not** an official comparable BM25 result because 91 generations are API error strings
+  - resume support is already in place, so once balance is restored we should continue from the current file rather than rerunning the successful 421 samples
+- Next action:
+  - restore DeepSeek balance
+  - resume `BM25` Step3 to reach `512 / 512`
+  - then rerun official no-judge Step4
+
+## 2026-04-17 - GraphRAG - official baseline integration
+
+- Goal:
+  - replace the previous internal `GraphRAG-local` evaluation proxy with the Microsoft official GraphRAG baseline
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `python -m py_compile evaluation/methods/graphrag_official_common.py evaluation/methods/graphrag.py evaluation/script_graphrag_index.py`
+  - `python evaluation/script_graphrag_index.py --help`
+  - `python evaluation/script_graphrag.py --help`
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat` for official GraphRAG chat-side configuration
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B` exposed via a future OpenAI-compatible embedding endpoint
+  - LLM judge: unchanged; Step3 / Step4 stay on the shared evaluation pipeline
+  - Seed: not applicable
+  - Other params:
+    - `GraphRAG` Step2 now uses official `local search` context building only
+    - Step2 intentionally does **not** use the official final answer generation path
+    - dedicated Step1 workspace root: `evaluation/expr_official_graphrag/<dataset>/`
+- Output:
+  - Directory:
+    - `evaluation/`
+  - Files:
+    - `methods/graphrag_official_common.py`
+    - `methods/graphrag.py`
+    - `script_graphrag_index.py`
+    - docs / task files updated
+- Result summary:
+  - `GraphRAG` in this repo now means `Microsoft official GraphRAG + standard indexing + local search context builder`
+  - legacy `evaluation/results/GraphRAG/...` outputs are now obsolete and are not directly comparable to future official GraphRAG runs
+  - official GraphRAG currently requires `HGRAG_GRAPHRAG_EMBED_API_BASE` because the project default embedding is local rather than provided by the DeepSeek official API
+  - Average consumed tokens: not applicable yet because no official GraphRAG Step3 run was launched in this change
+- Outcome:
+  - success
+- Notes:
+  - this is a code and experiment-definition change only; no official GraphRAG score was produced in this entry
+  - `HyperGraphRAG` / `SWHC` logic, objectives, and historical results are unchanged
+- Next action:
+  - provide an OpenAI-compatible endpoint for the local embedding model
+  - run official GraphRAG Step1 smoke test
+  - then run the first full `hypertension` Step2~Step4 chain
+
+## 2026-04-17 - GraphRAG - Ollama embedding alignment
+
+- Goal:
+  - align the official GraphRAG embedding adapter with the current Ollama-deployed local embedding setup
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `ollama list`
+  - `ollama ps`
+  - `Invoke-RestMethod http://127.0.0.1:11434/v1/models`
+  - `python -m py_compile evaluation/methods/graphrag_official_common.py`
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: Ollama OpenAI-compatible endpoint at `http://127.0.0.1:11434/v1`
+  - LLM judge: not applicable
+  - Seed: not applicable
+  - Other params:
+    - local `Qwen/Qwen3-Embedding-0.6B` is now auto-mapped to Ollama model name `qwen3-embedding:0.6b`
+    - default local embedding key for this path is `ollama`
+- Output:
+  - Directory:
+    - `evaluation/`
+  - Files:
+    - `methods/graphrag_official_common.py`
+    - `RUN_GUIDE.md`
+    - `evaluation/README.md`
+    - `TASK.md`
+- Result summary:
+  - official GraphRAG no longer requires a separate embedding-endpoint override for the default Ollama case
+  - local validation shows Ollama is reachable on `http://127.0.0.1:11434/v1`
+  - current local model list only includes `qwen3:14b`, so the intended embedding model `qwen3-embedding:0.6b` is not available yet
+  - Average consumed tokens: not applicable
+- Outcome:
+  - partial
+- Notes:
+  - this unblocks the config layer, but not the actual official GraphRAG smoke test yet
+  - until `qwen3-embedding:0.6b` is pulled into Ollama, Step1 will still fail when official GraphRAG requests embeddings
+- Next action:
+  - pull `qwen3-embedding:0.6b` into Ollama
+  - rerun the official GraphRAG Step1 smoke test on `hypertension`
+
+## 2026-04-17 - GraphRAG - hypertension - smoke Step1~Step2
+
+- Goal:
+  - verify the official GraphRAG integration on a small `hypertension` subset before any full-run attempt
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `ollama pull qwen3-embedding:0.6b`
+  - `Invoke-RestMethod http://127.0.0.1:11434/v1/embeddings` with model `qwen3-embedding:0.6b`
+  - `set HGRAG_GRAPHRAG_EMBED_API_BASE=http://127.0.0.1:11434/v1`
+  - `set HGRAG_GRAPHRAG_EMBED_MODEL=qwen3-embedding:0.6b`
+  - `set HGRAG_GRAPHRAG_EMBED_API_KEY=ollama`
+  - `python evaluation/script_graphrag_index.py --data_source hypertension --doc_limit 50 --workspace_suffix smoke --force_rebuild`
+  - one-off Python probe against `expr_official_graphrag/hypertension_smoke`
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: Ollama OpenAI-compatible endpoint / `qwen3-embedding:0.6b`
+  - LLM judge: not applicable
+  - Seed: not applicable
+  - Other params:
+    - smoke subset size: `50` contexts
+    - smoke workspace: `evaluation/expr_official_graphrag/hypertension_smoke/`
+- Output:
+  - Directory:
+    - `evaluation/expr_official_graphrag/hypertension_smoke/`
+  - Files:
+    - `input/documents.json`
+    - `output/entities.parquet`
+    - `output/relationships.parquet`
+    - `output/communities.parquet`
+    - `output/text_units.parquet`
+    - no `community_reports.parquet`
+- Result summary:
+  - Ollama embedding endpoint validated successfully
+  - Step1 smoke completed through:
+    - `create_base_text_units`
+    - `create_final_documents`
+    - `extract_graph`
+    - `finalize_graph`
+    - `extract_covariates`
+    - `create_communities`
+    - `create_final_text_units`
+  - Step1 smoke failed at:
+    - `create_community_reports`
+  - DeepSeek error:
+    - `400 invalid_request_error`
+    - message: `This response_format type is unavailable now`
+  - Step2 smoke could not complete because `community_reports.parquet` was missing, and a no-report local-search probe also could not proceed to normal vector retrieval because the downstream vector-store stage was never reached after the Step1 workflow error
+  - Average consumed tokens: not recorded for this smoke run
+- Outcome:
+  - partial
+- Notes:
+  - this is a real compatibility finding for the current default stack, not a HyperGraphRAG / SWHC regression
+  - no official `GraphRAG` result file under `evaluation/results/GraphRAG/...` was produced by this smoke test
+- Next action:
+  - decide whether to patch official GraphRAG indexing to avoid this response-format path, or use a different indexing-time chat model for the official GraphRAG baseline
+
+## 2026-04-17 - GraphRAG - DeepSeek JSON-mode compatibility + smoke rerun
+
+- Goal:
+  - keep the official `GraphRAG` baseline on `DeepSeek official API` and remove the `create_community_reports` compatibility blocker without changing the provider
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `python -m py_compile evaluation/methods/graphrag_official_common.py`
+  - `python evaluation/script_graphrag_index.py --data_source hypertension --doc_limit 50 --workspace_suffix smoke --force_rebuild`
+  - remove only `expr_official_graphrag/hypertension_smoke/output` and `logs`, keep `cache`
+  - `python evaluation/script_graphrag_index.py --data_source hypertension --doc_limit 50 --workspace_suffix smoke`
+  - one-off Python probe:
+    - build official local-context runner from `workspace_suffix=smoke`
+    - evaluate the first `5` `hypertension` questions without writing formal result files
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: Ollama OpenAI-compatible endpoint / `qwen3-embedding:0.6b`
+  - LLM judge: not applicable
+  - Seed: not applicable
+  - Other params:
+    - DeepSeek compatibility path: official `community_reports` switched to `json_object` mode plus local Pydantic parsing
+    - embedding vector size: auto-probed from the endpoint response before writing `settings.yaml`
+    - smoke subset size: `50` contexts
+    - smoke questions probed in Step2: `5`
+- Output:
+  - Directory:
+    - `evaluation/expr_official_graphrag/hypertension_smoke/`
+  - Files:
+    - `input/documents.json`
+    - `output/entities.parquet`
+    - `output/relationships.parquet`
+    - `output/communities.parquet`
+    - `output/community_reports.parquet`
+    - `output/text_units.parquet`
+    - `output/lancedb/`
+- Result summary:
+  - the original DeepSeek blocker in `create_community_reports` is resolved
+  - the follow-up LanceDB write failure is also resolved:
+    - previous cause: config defaulted `vector_size=3072`
+    - actual Ollama `qwen3-embedding:0.6b` dimension: `1024`
+  - rerunning with cache preserved avoided another uncached DeepSeek smoke rebuild:
+    - DeepSeek metrics on the successful rerun show `427 / 427` cached responses
+    - Ollama embedding metrics show `55` requests, with `25` cache hits
+  - official GraphRAG Step1 smoke now completes end-to-end on the `50`-document subset
+  - official local-search Step2 smoke succeeds on the first `5` `hypertension` questions
+    - all `5 / 5` sampled questions produced non-empty `knowledge`
+    - returned sections include stable `entities / relationships / sources`, with optional `reports` appearing for some queries inside the raw context records
+  - Average consumed tokens: not written into evaluation result files for this smoke probe
+- Outcome:
+  - success
+- Notes:
+  - no `SWHC` formula, objective, or solver behavior was changed
+  - the current verification is still a smoke-level check; no full `GraphRAG` `hypertension` Step2/Step3/Step4 run was started here
+- Next action:
+  - keep `GraphRAG` full-run work behind the current `BM25 / HybridRAG` P0 completion
+  - when scheduled, run the full official `GraphRAG` `hypertension` baseline on the same shared evaluation chain
+
+## 2026-04-18 - HybridRAG - hypertension - no-judge Step3~Step4
+
+- Goal:
+  - complete the first full no-judge `HybridRAG` run on `hypertension`
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `set HGRAG_GENERATION_WORKERS=4`
+  - `set HGRAG_OPENAI_TIMEOUT_SECONDS=180`
+  - `set HGRAG_ENABLE_LLM_JUDGE=false`
+  - `python evaluation/get_generation.py --data_sources hypertension --methods HybridRAG`
+  - `set HGRAG_SCORE_WORKERS=2`
+  - `python evaluation/get_score.py --data_source hypertension --method HybridRAG --enable_llm_judge false`
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: `off`
+  - Seed: not recorded
+  - Other params:
+    - generation workers: `4`
+    - scoring workers: `2`
+    - timeout: `180s`
+- Output:
+  - Directory:
+    - `evaluation/results/HybridRAG/hypertension/`
+  - Files:
+    - `test_generation.json`
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - generation completed for `512 / 512` samples
+  - generation errors: `0`
+  - no-judge score:
+    - `EM = 6.64`
+    - `F1 = 20.94`
+    - `R-Sim = 63.81`
+  - average consumed tokens:
+    - `11999.5547`
+- Outcome:
+  - success
+- Notes:
+  - during the first scoring attempt, JSON dumping failed because some score fields were `numpy.float32`
+  - local fix:
+    - add recursive JSON-serialization normalization in `evaluation/get_score.py`
+    - then rerun Step4 successfully
+  - no `SWHC` formula, objective, or solver behavior was changed
+- Next action:
+  - keep the completed `HybridRAG` line in the no-judge comparison matrix
+  - then finish the official `GraphRAG` full no-judge run
+
+## 2026-04-18 - GraphRAG - hypertension - official full no-judge Step1~Step4
+
+- Goal:
+  - finish the first full official `GraphRAG` no-judge baseline on `hypertension`
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `set HGRAG_GRAPHRAG_EMBED_API_BASE=http://127.0.0.1:11434/v1`
+  - `set HGRAG_GRAPHRAG_EMBED_MODEL=qwen3-embedding:0.6b`
+  - `set HGRAG_GRAPHRAG_EMBED_API_KEY=ollama`
+  - `set HGRAG_GRAPHRAG_COMMUNITY_LEVEL=2`
+  - `python evaluation/script_graphrag_index.py --data_source hypertension`
+  - `python evaluation/script_graphrag.py --data_source hypertension`
+  - `set HGRAG_GENERATION_WORKERS=4`
+  - `set HGRAG_OPENAI_TIMEOUT_SECONDS=180`
+  - `set HGRAG_ENABLE_LLM_JUDGE=false`
+  - `python evaluation/get_generation.py --data_sources hypertension --methods GraphRAG`
+  - `set HGRAG_SCORE_WORKERS=2`
+  - `python evaluation/get_score.py --data_source hypertension --method GraphRAG --enable_llm_judge false`
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: Ollama OpenAI-compatible endpoint / `qwen3-embedding:0.6b`
+  - LLM judge: `off`
+  - Seed: not recorded
+  - Other params:
+    - official GraphRAG indexing method: `standard`
+    - official GraphRAG query mode: `local search`
+    - community level: `2`
+    - generation workers: `4`
+    - scoring workers: `2`
+- Output:
+  - Directory:
+    - `evaluation/expr_official_graphrag/hypertension/`
+    - `evaluation/results/GraphRAG/hypertension/`
+  - Files:
+    - `expr_official_graphrag/hypertension/input/documents.json`
+    - `expr_official_graphrag/hypertension/output/community_reports.parquet`
+    - `expr_official_graphrag/hypertension/output/lancedb/`
+    - `results/GraphRAG/hypertension/test_knowledge.json`
+    - `results/GraphRAG/hypertension/test_generation.json`
+    - `results/GraphRAG/hypertension/test_result.json`
+    - `results/GraphRAG/hypertension/test_score.json`
+- Result summary:
+  - full Step1 indexing completed on `107` contexts
+  - Step2 knowledge retrieval completed on `512 / 512` questions
+  - Step3 generation completed on `512 / 512` questions
+  - generation errors: `0`
+  - no-judge score:
+    - `EM = 5.08`
+    - `F1 = 14.76`
+    - `R-Sim = 68.70`
+  - average consumed tokens:
+    - `8026.1406`
+- Outcome:
+  - success
+- Notes:
+  - `GraphRAG` now refers to the Microsoft official implementation in the evaluation chain
+  - Step2 completed with some local-search warnings such as token-budget reverts and missing community-record additions on individual queries, but the run itself finished successfully and produced complete result files
+  - no `SWHC` formula, objective, or solver behavior was changed
+- Next action:
+  - keep this official `GraphRAG` line in the no-judge comparison matrix
+  - continue prioritizing `BM25` completion for the remaining flat baseline gap
+
+## 2026-04-18 - Results summary - hypertension - six-method no-judge comparison
+
+- Goal:
+  - consolidate the currently completed no-judge results into a directly readable project note
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - local result-file inspection only; no new expensive experiment launched
+- Config:
+  - Scope:
+    - `NaiveGeneration`
+    - `StandardRAG`
+    - `HybridRAG`
+    - `GraphRAG`
+    - `HyperGraphRAG`
+    - `SWHC`
+- Output:
+  - Directory:
+    - `docs/results/`
+  - Files:
+    - `hypertension_no_judge_comparison_2026-04-18.md`
+- Result summary:
+  - the six-method no-judge summary is now written as a standalone markdown note
+  - the note now also includes `Avg Context Tokens`
+    - historical values for `NaiveGeneration / StandardRAG / HyperGraphRAG / SWHC` are aligned with earlier result documents
+    - `HybridRAG / GraphRAG` are backfilled from current `test_knowledge.json` with the same `tiktoken` counting rule
+  - key current reading:
+    - `SWHC` remains the best overall method
+    - `HyperGraphRAG` remains the strongest non-SWHC baseline on `EM / F1`
+    - official `GraphRAG` is semantically strong (`R-Sim`) but currently weaker on exact-answer metrics
+    - `HybridRAG` is more answer-oriented than `GraphRAG`, but more expensive in tokens
+    - `StandardRAG` should still be read as a lower-confidence lower bound because of `149` historical `[ERROR]` generations
+- Outcome:
+  - success
+- Notes:
+  - this entry writes documentation only and does not change any retrieval or scoring logic
+- Next action:
+  - keep this note aligned with later `BM25` completion and any future cleaned rerun of `StandardRAG`
+
+## 2026-04-18 - Analysis - StandardRAG vs HybridRAG / GraphRAG comparability check
+
+- Goal:
+  - determine whether the currently observed `StandardRAG > HybridRAG / GraphRAG` gap on `EM / F1` is caused by an experiment issue, an implementation bug, or genuine method behavior
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - local result-file inspection only; no new expensive experiment launched
+  - compare:
+    - `evaluation/results/StandardRAG/hypertension/test_knowledge.json`
+    - `evaluation/results/StandardRAG/hypertension/test_generation.json`
+    - `evaluation/results/HybridRAG/hypertension/test_knowledge.json`
+    - `evaluation/results/HybridRAG/hypertension/test_generation.json`
+    - `evaluation/results/GraphRAG/hypertension/test_knowledge.json`
+    - `evaluation/results/GraphRAG/hypertension/test_generation.json`
+- Config:
+  - Scope:
+    - `StandardRAG`
+    - `HybridRAG`
+    - `GraphRAG`
+  - Shared prompt reference:
+    - `evaluation/get_generation.py`
+- Result summary:
+  - the current `StandardRAG` score is **not** a clean apples-to-apples comparator for the current `HybridRAG / GraphRAG` runs
+  - file-level consistency check:
+    - `HybridRAG` prompt-side knowledge matches current `test_knowledge.json` for `512 / 512` samples
+    - `GraphRAG` prompt-side knowledge matches current `test_knowledge.json` for `512 / 512` samples
+    - `StandardRAG` prompt-side knowledge matches current `test_knowledge.json` for `0 / 512` samples
+  - context-scale cross-check:
+    - historical `StandardRAG` prompt-side knowledge averages about `6258.6` tokens
+    - current `StandardRAG` `test_knowledge.json` averages about `11520.9` tokens
+    - this matches the older partial-result document rather than the current Step2 snapshot
+  - interpretation:
+    - this is an **experiment comparability issue** for `StandardRAG`
+    - the current `StandardRAG` row should be treated as historical reference, not as a fair same-snapshot baseline against current `HybridRAG / GraphRAG`
+  - additional behavioral finding after controlling for obvious API failures:
+    - success-only `EM / F1`:
+      - `StandardRAG`: `19.56 / 33.41` on `363` successful generations
+      - `HybridRAG`: `6.64 / 20.94` on `512` successful generations
+      - `GraphRAG`: `5.08 / 14.76` on `512` successful generations
+    - average extracted answer length:
+      - `StandardRAG`: `23.15` words
+      - `HybridRAG`: `44.15` words
+      - `GraphRAG`: `55.32` words
+    - on the subset where `StandardRAG` succeeded and both methods' `knowledge` already contained the gold term:
+      - `StandardRAG` vs `HybridRAG`: `268` samples, `EM/F1 = 23.13 / 36.63` vs `3.36 / 10.12`
+      - `StandardRAG` vs `GraphRAG`: `221` samples, `EM/F1 = 23.53 / 37.14` vs `3.62 / 8.32`
+    - so the gap is not explained only by missing recall; context organization and answer verbosity are also contributing factors
+- Outcome:
+  - success
+- Notes:
+  - this entry records an analysis finding only; no retrieval, generation, scoring, or `SWHC` logic was changed
+- Next action:
+  - if fair comparison is needed, rerun `StandardRAG` Step3~Step4 from the current frozen `test_knowledge.json`
+  - then re-evaluate the `StandardRAG / HybridRAG / GraphRAG` ranking on the same snapshot
+
+## 2026-04-18 - Analysis - six-baseline fairness audit after StandardRAG rerun
+
+- Goal:
+  - determine whether the remaining main baselines still contain unfair historical-vs-current comparison issues after the clean `StandardRAG` rerun
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - local result-file inspection only; no new expensive experiment launched
+  - compare:
+    - `evaluation/results/NaiveGeneration/hypertension/test_knowledge.json`
+    - `evaluation/results/NaiveGeneration/hypertension/test_generation.json`
+    - `evaluation/results/HyperGraphRAG/hypertension/test_knowledge.json`
+    - `evaluation/results/HyperGraphRAG/hypertension/test_generation.json`
+    - `evaluation/results/SWHC/hypertension/test_knowledge.json`
+    - `evaluation/results/SWHC/hypertension/test_generation.json`
+- Config:
+  - Scope:
+    - `NaiveGeneration`
+    - `HyperGraphRAG`
+    - `SWHC`
+  - Shared prompt reference:
+    - `evaluation/get_generation.py`
+- Result summary:
+  - the remaining fairness issue is **not** a content mismatch by question key
+  - file-level consistency check:
+    - `NaiveGeneration`: prompt-side knowledge matches current `test_knowledge.json` for `171 / 512` samples by row order, but `512 / 512` by question key
+    - `HyperGraphRAG`: prompt-side knowledge matches current `test_knowledge.json` for `250 / 512` samples by row order, but `512 / 512` by question key
+    - `SWHC`: prompt-side knowledge matches current `test_knowledge.json` for `241 / 512` samples by row order, but `512 / 512` by question key
+  - interpretation:
+    - `NaiveGeneration / HyperGraphRAG / SWHC` do not need a Step2 rebuild for fairness
+    - however, their historical generation files are stale in row order relative to the current `test_knowledge.json`
+    - this makes row-wise file inspection and future resume logic unsafe
+    - they also still lack token-usage recording under the latest pipeline
+- Outcome:
+  - success
+- Notes:
+  - this is an experiment bookkeeping issue, not evidence that the underlying `HyperGraphRAG` or `SWHC` retrieval implementations changed
+  - no retrieval logic, no scoring logic, and no `SWHC` formula, objective, or solver behavior was changed here
+- Next action:
+  - rerun `NaiveGeneration / HyperGraphRAG / SWHC` Step3~Step4 against the current frozen Step2 files
+  - then refresh the six-method comparison note
+
+## 2026-04-18 - NaiveGeneration - hypertension - clean comparable no-judge rerun
+
+- Goal:
+  - rerun `NaiveGeneration` on the current shared Step3 / Step4 pipeline so it is directly comparable to the refreshed main baselines
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `set HGRAG_FORCE_REGENERATE=true`
+  - `set HGRAG_GENERATION_WORKERS=4`
+  - `set HGRAG_OPENAI_TIMEOUT_SECONDS=180`
+  - `set HGRAG_ENABLE_LLM_JUDGE=false`
+  - `python evaluation/get_generation.py --data_sources hypertension --methods NaiveGeneration`
+  - `set HGRAG_SCORE_WORKERS=2`
+  - `python evaluation/get_score.py --data_source hypertension --method NaiveGeneration --enable_llm_judge false`
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: `off`
+  - Seed: not recorded
+  - Other params:
+    - generation workers: `4`
+    - scoring workers: `2`
+    - timeout: `180s`
+    - no retrieval context by design
+- Output:
+  - Directory:
+    - `evaluation/results/NaiveGeneration/hypertension/`
+  - Files:
+    - `test_generation.json`
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - generation completed for `512 / 512` samples
+  - generation errors: `0`
+  - prompt-side knowledge now matches current `test_knowledge.json` for `512 / 512` samples
+  - no-judge score:
+    - `EM = 6.05`
+    - `F1 = 13.93`
+    - `R-Sim = 0.00`
+  - average consumed tokens:
+    - `564.8027`
+- Outcome:
+  - success
+- Notes:
+  - this rerun does not change retrieval because `NaiveGeneration` uses empty `knowledge`
+  - no `SWHC` formula, objective, or solver behavior was changed
+- Next action:
+  - keep this rerun in the fair six-method comparison table
+
+## 2026-04-18 - HyperGraphRAG - hypertension - clean comparable no-judge rerun
+
+- Goal:
+  - rerun `HyperGraphRAG` on the current shared Step3 / Step4 pipeline without rebuilding Step2, because the current knowledge file already matches by question key
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `set HGRAG_FORCE_REGENERATE=true`
+  - `set HGRAG_GENERATION_WORKERS=4`
+  - `set HGRAG_OPENAI_TIMEOUT_SECONDS=180`
+  - `set HGRAG_ENABLE_LLM_JUDGE=false`
+  - `python evaluation/get_generation.py --data_sources hypertension --methods HyperGraphRAG`
+  - `set HGRAG_SCORE_WORKERS=2`
+  - `python evaluation/get_score.py --data_source hypertension --method HyperGraphRAG --enable_llm_judge false`
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: `off`
+  - Seed: not recorded
+  - Other params:
+    - generation workers: `4`
+    - scoring workers: `2`
+    - timeout: `180s`
+    - Step2 was not rerun because prompt-side knowledge already matched the current knowledge file for `512 / 512` samples by question key
+- Output:
+  - Directory:
+    - `evaluation/results/HyperGraphRAG/hypertension/`
+  - Files:
+    - `test_generation.json`
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - generation completed for `512 / 512` samples
+  - generation errors: `0`
+  - prompt-side knowledge now matches current `test_knowledge.json` for `512 / 512` samples by row order
+  - no-judge score:
+    - `EM = 4.69`
+    - `F1 = 19.80`
+    - `R-Sim = 66.53`
+  - average consumed tokens:
+    - `22839.1992`
+- Outcome:
+  - success
+- Notes:
+  - this is a clean current-pipeline rerun; do not mix it with the earlier historical `HyperGraphRAG` row when reading the fair table
+  - no `SWHC` formula, objective, or solver behavior was changed
+- Next action:
+  - keep this rerun in the fair six-method comparison table
+
+## 2026-04-18 - SWHC - hypertension - clean comparable no-judge rerun
+
+- Goal:
+  - rerun `SWHC` on the current shared Step3 / Step4 pipeline without rebuilding Step2, because the current knowledge file already matches by question key
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - `set HGRAG_FORCE_REGENERATE=true`
+  - `set HGRAG_GENERATION_WORKERS=4`
+  - `set HGRAG_OPENAI_TIMEOUT_SECONDS=180`
+  - `set HGRAG_ENABLE_LLM_JUDGE=false`
+  - `python evaluation/get_generation.py --data_sources hypertension --methods SWHC`
+  - `set HGRAG_SCORE_WORKERS=2`
+  - `python evaluation/get_score.py --data_source hypertension --method SWHC --enable_llm_judge false`
+- Config:
+  - API/model: `DeepSeek official API` / `deepseek-chat`
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: `off`
+  - Seed: not recorded
+  - Other params:
+    - generation workers: `4`
+    - scoring workers: `2`
+    - timeout: `180s`
+    - Step2 was not rerun because prompt-side knowledge already matched the current knowledge file for `512 / 512` samples by question key
+- Output:
+  - Directory:
+    - `evaluation/results/SWHC/hypertension/`
+  - Files:
+    - `test_generation.json`
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - generation completed for `512 / 512` samples
+  - generation errors: `0`
+  - prompt-side knowledge now matches current `test_knowledge.json` for `512 / 512` samples by row order
+  - no-judge score:
+    - `EM = 8.01`
+    - `F1 = 23.73`
+    - `R-Sim = 69.33`
+  - average consumed tokens:
+    - `5416.9941`
+- Outcome:
+  - success
+- Notes:
+  - this is a clean current-pipeline rerun; do not mix it with the earlier historical `SWHC` row when reading the fair table
+  - no `SWHC` formula, objective, or solver behavior was changed
+- Next action:
+  - keep this rerun in the fair six-method comparison table
+
+## 2026-04-18 - Results summary - hypertension - refreshed fair six-method no-judge comparison
+
+- Goal:
+  - replace the earlier mixed historical summary with a current directly comparable six-method table
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - local result-file inspection only after the reruns above; no extra expensive experiment launched
+- Config:
+  - Scope:
+    - `NaiveGeneration`
+    - `StandardRAG`
+    - `HybridRAG`
+    - `GraphRAG`
+    - `HyperGraphRAG`
+    - `SWHC`
+- Output:
+  - Directory:
+    - `docs/results/`
+  - Files:
+    - `hypertension_no_judge_comparison_2026-04-18.md`
+- Result summary:
+  - the main six-method table is now fair on the current shared pipeline
+  - file-level consistency check after reruns:
+    - all six methods now have prompt-side knowledge matching current `test_knowledge.json` for `512 / 512` samples
+    - all six methods have `0 / 512` generation errors
+    - all six methods have `512 / 512` token-usage recording
+  - current `F1` ranking:
+    - `SWHC = 23.73`
+    - `HybridRAG = 20.94`
+    - `HyperGraphRAG = 19.80`
+    - `StandardRAG = 18.74`
+    - `GraphRAG = 14.76`
+    - `NaiveGeneration = 13.93`
+  - current token-cost reading:
+    - `HyperGraphRAG` is the most expensive baseline at `22839.1992` average consumed tokens
+    - `SWHC` is the strongest overall row while using `5416.9941` average consumed tokens
+- Outcome:
+  - success
+- Notes:
+  - this entry supersedes the earlier mixed historical six-method reading for direct comparison
+  - no retrieval logic, no scoring logic, and no `SWHC` formula, objective, or solver behavior was changed
+- Next action:
+  - keep the fair six-method table stable
+  - only add `BM25` after its interrupted no-judge generation is resumed and completed
+
+## Next entries to add
+
+The next experiments that should be logged here are:
+
+1. `BM25` resumed `hypertension` Step3 completion after DeepSeek balance recovery
+2. refreshed six-method comparison after `BM25` completion
+3. first public dataset adapter run
+
+## 2026-04-29 - Infrastructure - GPT-5.4 API config verification and default-model alignment
+
+- Goal:
+  - verify whether the updated `api_config.txt` can drive the evaluation stack with `gpt-5.4`
+  - align Step3 / Step4 default model selection with `api_config.txt` so the runtime behavior matches the current config documentation
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Command:
+  - direct config inspection only
+  - realtime smoke test with explicit model:
+    - `RealtimeInferenceBackend`
+    - prompt: `Reply with exactly: GPT54_OK`
+  - realtime smoke test through the default helper path after the code fix:
+    - `get_generation_model()`
+    - prompt: `Reply with exactly: DEFAULT_OK`
+- Config:
+  - API base: `https://ai.butel.com/api`
+  - Main chat model from `api_config.txt`: `gpt-5.4-mini-hy`
+  - Judge model default after code alignment: follows the same configured chat model unless `HGRAG_JUDGE_MODEL` overrides it
+  - Embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge: not used in this smoke test
+- Code changes:
+  - `evaluation/inference_backend.py`
+    - change Step3 / Step4 default generation and judge model fallback to `get_openai_model(...)`, so they now read `api_config.txt` by default instead of staying pinned to the old hard-coded DeepSeek defaults
+  - docs updated:
+    - `AGENTS.md`
+    - `TASK.md`
+    - `evaluation/BACKEND_GUIDE.md`
+- Result summary:
+  - config loader resolves:
+    - API base: `https://ai.butel.com/api`
+    - main chat model: `gpt-5.4-mini-hy`
+    - embedding model: `local:Qwen/Qwen3-Embedding-0.6B`
+  - explicit realtime smoke test succeeded:
+    - reply matched exactly: `GPT54_OK`
+    - usage: prompt `13`, completion `7`, total `20`
+  - default-helper realtime smoke test also succeeded after the code fix:
+    - `get_generation_model() = gpt-5.4-mini-hy`
+    - `get_judge_model() = gpt-5.4-mini-hy`
+    - reply matched exactly: `DEFAULT_OK`
+    - usage: prompt `12`, completion `6`, total `18`
+- Outcome:
+  - success
+- Notes:
+  - this was an infrastructure verification and documentation-alignment task only; no dataset experiment was rerun
+  - no `SWHC` formula, objective, or solver behavior was changed
+- Next action:
+  - when future experiments rely on the current default runtime, treat `api_config.txt` as the source of truth for the realtime chat model
+
+## 2026-05-05 - HotPotQA_64 - six-method no-judge pilot with current API config
+
+- Goal:
+  - run the current six-method no-judge evaluation on a small public HotPotQA pilot dataset using the latest `api_config.txt`
+  - do not use a fallback build model; use `gpt-5.4-mini-hy` for build-time LLM calls and answer generation
+- Code version:
+  - Git commit: not recorded
+  - Branch: not recorded
+- Dataset:
+  - source: Hugging Face `hotpotqa/hotpot_qa`
+  - config/split: `distractor / validation`
+  - sample: first `64` rows
+  - context mode: `bundle`
+  - generated files:
+    - `evaluation/datasets/hotpotqa_64/questions.json`
+    - `evaluation/contexts/hotpotqa_64_contexts.json`
+    - `evaluation/datasets/hotpotqa_64/dataset_meta.json`
+- Commands:
+  - `python evaluation/prepare_hotpotqa.py --data_source hotpotqa_64 --sample_size 64 --context_mode bundle`
+  - `set HGRAG_INSERT_LLM_MAX_ASYNC=2`
+  - `set HGRAG_ENTITY_SUMMARY_LLM_MAX_ASYNC=1`
+  - `set HGRAG_OPENAI_TIMEOUT_SECONDS=120`
+  - `python evaluation/script_insert.py --cls hotpotqa_64`
+  - `python evaluation/script_naivegeneration.py --data_source hotpotqa_64`
+  - `python evaluation/script_standardrag.py --data_source hotpotqa_64`
+  - `python evaluation/script_hybrid_rag.py --data_source hotpotqa_64`
+  - `python evaluation/script_hypergraphrag.py --data_source hotpotqa_64`
+  - `python evaluation/script_swhc.py --data_source hotpotqa_64`
+  - `python evaluation/script_graphrag_index.py --data_source hotpotqa_64`
+  - `python evaluation/script_graphrag.py --data_source hotpotqa_64`
+  - `set HGRAG_GENERATION_WORKERS=2`
+  - `python evaluation/get_generation.py --data_sources hotpotqa_64 --methods NaiveGeneration,StandardRAG,HybridRAG,GraphRAG,HyperGraphRAG,SWHC`
+  - `set HGRAG_ENABLE_LLM_JUDGE=false`
+  - `set HGRAG_SCORE_WORKERS=4`
+  - `python evaluation/get_score.py --data_source hotpotqa_64 --method <method> --enable_llm_judge false`
+- Config:
+  - API base: `https://ai.butel.com/api`
+  - Main chat model: `gpt-5.4-mini-hy`
+  - Fallback build model: not used
+  - HyperGraphRAG embedding: local `Qwen/Qwen3-Embedding-0.6B`
+  - official GraphRAG embedding: local Ollama OpenAI-compatible `qwen3-embedding:0.6b`
+  - LLM judge: `off`
+- Code changes:
+  - added `evaluation/prepare_hotpotqa.py`
+    - converts HotPotQA Dataset Viewer rows into project `questions.json` and `contexts.json`
+    - supports `bundle` and `title` context modes
+  - added optional `HGRAG_OPENAI_TIMEOUT_SECONDS` support to `evaluation/hypergraphrag/llm.py`
+  - added official GraphRAG content-filter robustness in `evaluation/methods/graphrag_official_common.py`
+    - normal `gpt-5.4-mini-hy` calls are unchanged
+    - if a summary prompt is rejected by provider content filtering, only that summary falls back to deterministic local description concatenation/truncation
+- Build/index summary:
+  - HyperGraphRAG Step1 completed with `10433` graph nodes and `10195` graph edges
+  - official GraphRAG output tables:
+    - documents: `64`
+    - text units: `110`
+    - entities: `4158`
+    - relationships: `4204`
+    - communities: `571`
+    - community reports: `571`
+  - official GraphRAG build note:
+    - an unpatched run failed in `extract_graph` because one `gpt-5.4-mini-hy` description-summary prompt triggered provider content filtering
+    - after the content-filter fallback patch, the rerun completed with no failed workflows
+    - recorded official GraphRAG chat usage in the successful run: `2046` responses, `1079` cache hits, about `3,872,004` total chat tokens
+- Result summary:
+  - all six methods completed `64 / 64` generations
+  - all six methods have `0` final generation errors
+  - all six methods have token usage for `64 / 64` samples
+  - no-judge scores:
+    - `NaiveGeneration`: EM `14.06`, F1 `32.34`, R-Sim `0.00`, Avg tokens `189.17`
+    - `StandardRAG`: EM `40.62`, F1 `62.07`, R-Sim `61.57`, Avg tokens `11656.72`
+    - `HybridRAG`: EM `37.50`, F1 `60.94`, R-Sim `60.28`, Avg tokens `11661.14`
+    - `GraphRAG`: EM `35.94`, F1 `55.10`, R-Sim `68.01`, Avg tokens `5311.81`
+    - `HyperGraphRAG`: EM `43.75`, F1 `66.56`, R-Sim `68.38`, Avg tokens `17531.95`
+    - `SWHC`: EM `39.06`, F1 `61.20`, R-Sim `67.30`, Avg tokens `3036.39`
+- Output:
+  - result directories:
+    - `evaluation/results/<Method>/hotpotqa_64/`
+  - analysis document:
+    - `docs/results/hotpotqa_64_no_judge_comparison_2026-05-05.md`
+- Outcome:
+  - success
+- Notes:
+  - this is a pilot-scale public dataset result, not a full HotPotQA table
+  - the `bundle` conversion makes each question's distractor context a single document, so flat dense and hybrid baselines have unusually direct access to near-gold context
+  - one `NaiveGeneration` answer prompt initially hit `invalid_prompt`; it was regenerated with an explicit benign-benchmark safety preface and usage was recorded
+  - no `SWHC` formula, semantic weighting, objective, or solver behavior was changed
+- Next action:
+  - use this result to decide whether the next HotPotQA run should scale to `512` bundle samples or switch to a stricter title-level corpus
+
+## 2026-05-06 - SWHC - source rerank implementation - code change
+
+- Goal:
+  - add answer-aware / question-aware source reranking to SWHC context export after the `hotpotqa_64` fairness analysis
+  - keep SWHC as a query-time evidence assembly method and avoid changing indexing or graph construction
+- Code version:
+  - Git commit before change:
+    - `558a797 chore: record hotpotqa pilot state`
+  - Branch:
+    - `main`
+- Command:
+  - code change only
+  - syntax check:
+    - `python -m py_compile evaluation/hypergraphrag/base.py evaluation/hypergraphrag/operate.py evaluation/hypergraphrag/swhc.py evaluation/methods/swhc.py hypergraphrag/base.py hypergraphrag/operate.py hypergraphrag/swhc.py`
+  - local in-memory smoke test:
+    - constructed a tiny SWHC subgraph with two candidate sources and verified that the question-matching source is ordered first
+- Config:
+  - API/model:
+    - not used
+  - Embedding:
+    - not used
+  - LLM judge:
+    - not used
+  - Seed:
+    - not applicable
+  - Other params:
+    - `swhc_source_rerank = True`
+    - `swhc_source_support_weight = 0.75`
+    - `swhc_source_query_weight = 2.0`
+    - `swhc_source_terminal_weight = 0.75`
+    - `swhc_source_node_weight = 0.25`
+    - `swhc_source_length_penalty = 0.05`
+    - ablation switch:
+      - `HGRAG_SWHC_SOURCE_RERANK=false`
+- Output:
+  - Files changed:
+    - `evaluation/hypergraphrag/base.py`
+    - `evaluation/hypergraphrag/operate.py`
+    - `evaluation/hypergraphrag/swhc.py`
+    - `evaluation/methods/swhc.py`
+    - root package alignment under `hypergraphrag/`
+    - `AGENTS.md`
+    - `TASK.md`
+- Result summary:
+  - no dataset was rerun
+  - no new `test_knowledge.json`, `test_generation.json`, or `test_score.json` result was produced
+  - SWHC `Sources` are now sorted by a weighted score combining:
+    - structural support count
+    - query/source lexical overlap
+    - terminal coverage
+    - selected-node score support
+    - source length penalty
+- Outcome:
+  - implementation complete
+  - syntax check passed
+  - local in-memory source-ordering smoke test passed
+- Notes:
+  - this changes SWHC query-time context assembly behavior
+  - SWHC rows produced before this change are not directly comparable to post-rerank SWHC rows without qualification
+  - the SWHC connector objective and solver are unchanged
+- Next action:
+  - rerun SWHC Step2 on `hotpotqa_64` and compare support-sentence recall, full-support sample count, average source count, and average context tokens before launching Step3 generation
+
+## 2026-05-06 - SWHC - hotpotqa_64 - post-source-rerank Step2~Step4
+
+- Goal:
+  - rerun SWHC on `hotpotqa_64` after enabling source rerank
+  - compare whether source rerank improves support recall and no-judge answer metrics
+- Code version:
+  - Git commit before source-rerank implementation:
+    - `558a797 chore: record hotpotqa pilot state`
+  - Branch:
+    - `main`
+- Command:
+  - pre-rerank baseline read from existing result files
+  - `set HGRAG_SWHC_SOURCE_RERANK=true`
+  - `set HGRAG_OPENAI_TIMEOUT_SECONDS=180`
+  - `conda run -n hypergraphrag python script_swhc.py --data_source hotpotqa_64`
+  - `set HGRAG_FORCE_REGENERATE=true`
+  - `set HGRAG_GENERATION_WORKERS=2`
+  - `conda run -n hypergraphrag python get_generation.py --data_sources hotpotqa_64 --methods SWHC`
+  - `set HGRAG_ENABLE_LLM_JUDGE=false`
+  - `set HGRAG_SCORE_WORKERS=4`
+  - `conda run -n hypergraphrag python get_score.py --data_source hotpotqa_64 --method SWHC --enable_llm_judge false`
+- Config:
+  - API base:
+    - `https://ai.butel.com/api`
+  - Main chat model:
+    - `gpt-5.4-mini-hy`
+  - Embedding:
+    - local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge:
+    - `off`
+  - Seed:
+    - not recorded
+  - Other params:
+    - `swhc_source_rerank = True`
+    - `swhc_source_support_weight = 0.75`
+    - `swhc_source_query_weight = 2.0`
+    - `swhc_source_terminal_weight = 0.75`
+    - `swhc_source_node_weight = 0.25`
+    - `swhc_source_length_penalty = 0.05`
+- Output:
+  - Directory:
+    - `evaluation/results/SWHC/hotpotqa_64/`
+  - Files:
+    - `test_knowledge.json`
+    - `test_generation.json`
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - pre-rerank current-file baseline:
+    - `EM = 39.06`
+    - `F1 = 61.20`
+    - `R-Sim = 67.30`
+    - average consumed tokens `3036.39`
+    - support-sentence recall `127 / 158 = 0.8038`
+    - full-support samples `41 / 64`
+    - average sources `2.53`
+  - post-rerank:
+    - `EM = 37.50`
+    - `F1 = 59.93`
+    - `R-Sim = 66.72`
+    - average consumed tokens `3047.95`
+    - support-sentence recall `128 / 158 = 0.8101`
+    - full-support samples `42 / 64`
+    - average sources `2.58`
+    - generation errors `0 / 64`
+    - token-usage records `64 / 64`
+- Outcome:
+  - mixed / not an answer-quality improvement
+- Notes:
+  - source rerank slightly improved retrieval-side support coverage without materially increasing sources or tokens
+  - final no-judge answer metrics decreased slightly, likely because the retrieval gain was too small and generation exactness/noise still dominates several samples
+  - this run changes SWHC query-time assembly behavior, so it should not be mixed as directly comparable with older pre-rerank SWHC rows without qualification
+- Next action:
+  - do not scale this exact rerank to `hotpotqa_512` yet
+  - next useful ablation is either:
+    - add a shortest-answer generation prompt for all methods / or at least as a same-knowledge SWHC diagnostic
+    - tune rerank/source expansion to add answer-oriented sources rather than only reorder the existing selected source set
+
+## 2026-05-06 - SWHC - hotpotqa_64 - no-rerank shortest-answer-span diagnostic
+
+- Goal:
+  - temporarily avoid source rerank
+  - test whether SWHC's `hotpotqa_64` EM/F1 gap is largely caused by verbose answer formatting rather than retrieval alone
+  - keep the same no-rerank `test_knowledge.json` for a normal-prompt vs shortest-span-prompt comparison
+- Code version:
+  - Git commit before source-rerank implementation:
+    - `558a797 chore: record hotpotqa pilot state`
+  - Branch:
+    - `main`
+- Command:
+  - code change:
+    - added optional generation prompt switch `HGRAG_SHORTEST_ANSWER_SPAN`
+  - syntax check:
+    - `python -m py_compile evaluation/get_generation.py`
+  - no-rerank Step2:
+    - `set HGRAG_SWHC_SOURCE_RERANK=false`
+    - `set HGRAG_OPENAI_TIMEOUT_SECONDS=180`
+    - `conda run -n hypergraphrag python script_swhc.py --data_source hotpotqa_64`
+  - shortest-span Step3~Step4:
+    - `set HGRAG_FORCE_REGENERATE=true`
+    - `set HGRAG_GENERATION_WORKERS=2`
+    - `set HGRAG_OPENAI_TIMEOUT_SECONDS=180`
+    - `set HGRAG_SHORTEST_ANSWER_SPAN=true`
+    - `conda run -n hypergraphrag python get_generation.py --data_sources hotpotqa_64 --methods SWHC`
+    - `set HGRAG_ENABLE_LLM_JUDGE=false`
+    - `set HGRAG_SCORE_WORKERS=4`
+    - `conda run -n hypergraphrag python get_score.py --data_source hotpotqa_64 --method SWHC --enable_llm_judge false`
+  - same-knowledge normal-prompt comparison:
+    - archived the shortest-span result under `evaluation/results/SWHC_NoRerank_ShortestSpan/hotpotqa_64/`
+    - reran Step3~Step4 with `HGRAG_SHORTEST_ANSWER_SPAN` unset
+    - archived the normal-prompt result under `evaluation/results/SWHC_NoRerank_NormalPrompt/hotpotqa_64/`
+    - restored the active `evaluation/results/SWHC/hotpotqa_64/` directory to the shortest-span result
+- Config:
+  - API base:
+    - `https://ai.butel.com/api`
+  - Main chat model:
+    - `gpt-5.4-mini-hy`
+  - Embedding:
+    - local `Qwen/Qwen3-Embedding-0.6B`
+  - LLM judge:
+    - `off`
+  - Seed:
+    - not recorded
+  - Other params:
+    - `swhc_source_rerank = False`
+    - `HGRAG_SHORTEST_ANSWER_SPAN=true` for the diagnostic run
+    - after this diagnostic, source rerank default was changed to `False`; enable it explicitly with `HGRAG_SWHC_SOURCE_RERANK=true` for future rerank ablations
+- Output:
+  - Active shortest-span result:
+    - `evaluation/results/SWHC/hotpotqa_64/`
+  - Archived comparison results:
+    - `evaluation/results/SWHC_NoRerank_ShortestSpan/hotpotqa_64/`
+    - `evaluation/results/SWHC_NoRerank_NormalPrompt/hotpotqa_64/`
+  - Files:
+    - `test_knowledge.json`
+    - `test_generation.json`
+    - `test_result.json`
+    - `test_score.json`
+- Result summary:
+  - same no-rerank knowledge file:
+    - support-sentence recall `127 / 158 = 0.8038`
+    - full-support samples `41 / 64`
+    - average sources `2.59`
+    - average entities `4.75`
+    - average relationships `4.61`
+  - normal prompt on the same knowledge:
+    - `EM = 39.06`
+    - `F1 = 59.38`
+    - `R-Sim = 67.01`
+    - average consumed tokens `3110.92`
+    - average answer words `6.14`
+  - shortest-span prompt on the same knowledge:
+    - `EM = 75.00`
+    - `F1 = 85.42`
+    - `R-Sim = 67.01`
+    - average consumed tokens `3183.22`
+    - average answer words `2.31`
+  - pairwise same-knowledge comparison:
+    - shortest-span prompt wins on F1 for `28 / 64` samples
+    - loses on F1 for `3 / 64` samples
+    - ties on `33 / 64` samples
+    - average per-sample F1 delta `+0.2605`
+    - total EM delta `+23`
+  - generation quality:
+    - generation errors `0 / 64`
+    - token usage records `64 / 64`
+- Outcome:
+  - success
+- Notes:
+  - this strongly suggests that a large share of SWHC's apparent `hotpotqa_64` EM/F1 deficit is answer-format / verbosity rather than retrieval alone
+  - because the prompt is a generation-side evaluation protocol change, it must be applied consistently to all methods before producing a fair cross-method table
+  - R-Sim is unchanged because it evaluates gold support context against retrieved `knowledge`, not generated answer text
+  - the current active SWHC `hotpotqa_64` result directory now contains the no-rerank shortest-span run, so do not treat it as the original 2026-05-05 pilot row
+- Next action:
+  - run the shortest-span prompt consistently across the six-method `hotpotqa_64` table if we want a fair answer-format-controlled comparison
+  - separately investigate source expansion / retrieval recall, because shortest-span prompting does not solve missing-evidence cases
+
+## 2026-05-06 - HotPotQA_64 - six-method shortest-answer no-judge rerun
+- Goal:
+  - apply the shortest-answer-span generation protocol consistently across all six existing `hotpotqa_64` methods
+  - rerun only necessary steps: generation and no-judge scoring
+  - keep retrieval / `test_knowledge.json` fixed
+- Commands:
+  - Step3 generation:
+    - `set HGRAG_FORCE_REGENERATE=true`
+    - `set HGRAG_SHORTEST_ANSWER_SPAN=true`
+    - `set HGRAG_SWHC_SOURCE_RERANK=false`
+    - `set HGRAG_GENERATION_WORKERS=2`
+    - `conda run -n hypergraphrag python get_generation.py --data_sources hotpotqa_64 --methods "NaiveGeneration,StandardRAG,HybridRAG,GraphRAG,HyperGraphRAG,SWHC"`
+  - initial retry cleanup:
+    - `NaiveGeneration` sample `41` and `GraphRAG` sample `15` initially hit provider `invalid_prompt`
+    - both were regenerated successfully by rerunning only pending error samples
+  - Step4 scoring:
+    - `set HGRAG_ENABLE_LLM_JUDGE=false`
+    - `set HGRAG_SCORE_WORKERS=4`
+    - `conda run -n hypergraphrag python get_score.py --data_source hotpotqa_64 --method <METHOD> --enable_llm_judge false`
+- Config:
+  - API base:
+    - `https://ai.butel.com/api`
+  - Generation model:
+    - `gpt-5.4-mini-hy`
+  - LLM judge:
+    - `off`
+  - Source rerank:
+    - `SWHC` default no-rerank
+  - Prompt:
+    - shortest final answer span inside `<answer>...</answer>`
+- Output:
+  - active result directories updated under:
+    - `evaluation/results/NaiveGeneration/hotpotqa_64/`
+    - `evaluation/results/StandardRAG/hotpotqa_64/`
+    - `evaluation/results/HybridRAG/hotpotqa_64/`
+    - `evaluation/results/GraphRAG/hotpotqa_64/`
+    - `evaluation/results/HyperGraphRAG/hotpotqa_64/`
+    - `evaluation/results/SWHC/hotpotqa_64/`
+  - generation errors:
+    - `0 / 64` for every method after pending-sample retry
+  - token usage records:
+    - `64 / 64` for every method
+- Result summary:
+  - `NaiveGeneration`:
+    - `EM = 37.50`
+    - `F1 = 51.35`
+    - `R-Sim = 0.00`
+    - average consumed tokens `262.48`
+    - average answer words `2.12`
+  - `StandardRAG`:
+    - `EM = 71.88`
+    - `F1 = 84.56`
+    - `R-Sim = 61.57`
+    - average consumed tokens `11735.27`
+    - average answer words `2.33`
+  - `HybridRAG`:
+    - `EM = 71.88`
+    - `F1 = 86.40`
+    - `R-Sim = 60.28`
+    - average consumed tokens `11740.41`
+    - average answer words `2.31`
+  - `GraphRAG`:
+    - `EM = 59.38`
+    - `F1 = 72.84`
+    - `R-Sim = 68.01`
+    - average consumed tokens `5390.42`
+    - average answer words `2.30`
+  - `HyperGraphRAG`:
+    - `EM = 68.75`
+    - `F1 = 87.24`
+    - `R-Sim = 68.38`
+    - average consumed tokens `17610.14`
+    - average answer words `2.33`
+  - `SWHC`:
+    - `EM = 71.88`
+    - `F1 = 83.34`
+    - `R-Sim = 67.01`
+    - average consumed tokens `3184.52`
+    - average answer words `2.39`
+- Comparison to original `2026-05-05` normal-prompt table:
+  - all methods improved substantially in EM/F1
+  - `SWHC` improved by `+32.81` EM points and `+22.14` F1 points versus the original SWHC row
+  - `NaiveGeneration` also improved by `+23.44` EM points and `+19.01` F1 points, confirming that answer formatting was a global confound
+- SWHC efficiency reading:
+  - compared with `StandardRAG`, SWHC has equal EM, `-1.22` F1, `+5.44` R-Sim, and uses about `27%` of the tokens
+  - compared with `HybridRAG`, SWHC has equal EM, `-3.06` F1, `+6.73` R-Sim, and uses about `27%` of the tokens
+  - compared with `HyperGraphRAG`, SWHC has `+3.12` EM, `-3.90` F1, `-1.37` R-Sim, and uses about `18%` of the tokens
+  - compared with `GraphRAG`, SWHC has `+12.50` EM, `+10.50` F1, `-1.00` R-Sim, and uses about `59%` of the tokens
+- Outcome:
+  - success
+- Notes:
+  - the original six-method table did use a shared generation prompt, but that prompt was not exact-span controlled
+  - shortest-answer prompting should be treated as a separate evaluation protocol
+  - after exact-span control, SWHC is no longer clearly weak on HotPotQA_64: it is close to `StandardRAG` / `HybridRAG` in answer metrics while staying much more compact
+  - remaining SWHC losses are primarily evidence/specificity misses, for example:
+    - `Japan` instead of `Fujioka, Gunma`
+    - `1923` instead of `October 1922`
+    - `Lyndon Johnson` instead of `Nelson Rockefeller`
+    - incomplete or wrong writer list for `Delirium`
+- Next action:
+  - use the six-method shortest-answer table as the answer-format-controlled HotPotQA_64 comparison
+  - keep source rerank off by default
+  - next retrieval-side work should focus on source expansion / terminal-source coverage, not source rerank
+
+## 2026-05-06 - SWHC - hotpotqa_64 - shortest-answer error diagnosis
+- Goal:
+  - inspect the active SWHC shortest-answer result in detail
+  - separate answer-format problems from evidence retrieval, evidence organization, and generator slot-selection problems
+- Input files:
+  - `evaluation/results/SWHC/hotpotqa_64/test_knowledge.json`
+  - `evaluation/results/SWHC/hotpotqa_64/test_generation.json`
+  - `evaluation/results/SWHC/hotpotqa_64/test_result.json`
+  - `evaluation/results/SWHC/hotpotqa_64/test_score.json`
+- Active score:
+  - `EM = 71.88`
+  - `F1 = 83.34`
+  - `R-Sim = 67.01`
+  - average consumed tokens `3184.52`
+- Retrieval / answer-location statistics:
+  - EM hits:
+    - `46 / 64`
+  - non-EM samples:
+    - `18 / 64`
+  - support-sentence recall:
+    - `127 / 158`
+  - full-support samples:
+    - `41 / 64`
+  - gold appears anywhere in SWHC knowledge:
+    - `59 / 64`
+  - among non-EM samples:
+    - gold appears in `Sources`: `18 / 18`
+    - gold appears in `Entities`: `2 / 18`
+    - gold appears in `Relationships`: `4 / 18`
+  - among zero-F1 hard errors:
+    - count: `8 / 64`
+    - gold appears in `Sources`: `8 / 8`
+    - gold appears in `Relationships`: `1 / 8`
+- Interpretation:
+  - SWHC usually retrieves source text containing the answer, even in non-EM cases
+  - the answer span is often not explicitly represented in the structured `Entities` / `Relationships`
+  - because `Entities` and `Relationships` are compact, early, and structure-like, the generator may treat them as stronger evidence than a buried source sentence
+  - this creates wrong-slot errors when sources contain multiple nearby candidates or when a hyperedge captures a neighboring but non-answer fact
+- Representative cases:
+  - `#1`:
+    - gold `Chief of Protocol`
+    - SWHC answer `United States ambassador to Ghana`
+    - source contains both positions, while structure does not lift the exact office
+  - `#15`:
+    - gold `9,984`
+    - SWHC answer `331 million`
+    - source contains Brown County population, but structure emphasizes country-level United States
+  - `#31`:
+    - gold `Fujioka, Gunma`
+    - SWHC answer `Japan`
+    - exact place appears in source but answer collapses to country-level span
+  - `#35`:
+    - gold `October 1922`
+    - SWHC answer `1923`
+    - source contains competing temporal statements
+  - `#44`:
+    - gold `Nelson Rockefeller`
+    - SWHC answer `Lyndon Johnson`
+    - Rockefeller committee evidence exists, but a Vice President Lyndon Johnson committee sentence competes with it
+  - `#54`:
+    - gold `Max Martin, Savan Kotecha and Ilya Salmanzadeh`
+    - SWHC answer `Jim Eliot, Starsmith, Billboard, Justin Parker, MONSTA, Madeon, Mike Spencer`
+    - correct writer sentence appears in source, but a producer hyperedge is more salient
+  - `#61`:
+    - gold `Ronald Shusett`
+    - SWHC answer `Francis Ford Coppola`
+    - correct source sentence exists, but another film-score executive producer cue is more salient
+- Outcome:
+  - documented in `docs/results/hotpotqa_64_no_judge_comparison_2026-05-05.md`
+- Next action:
+  - keep source rerank off by default
+  - prioritize query-aware evidence compression / sentence extraction over selected SWHC sources
+  - expose a short `Relevant Evidence` block before `Entities` / `Relationships` / `Sources`
+  - optionally expose lightweight answer-candidate spans beside selected sources without changing indexing or the SWHC connector solver

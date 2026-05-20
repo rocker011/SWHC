@@ -1,0 +1,17 @@
+method:
+  name: SWHC
+  candidate_hops: 2
+  seed_topk_entity: 8
+  seed_topk_hyperedge: 8
+  hard_terminal_topk: 8
+  alpha: 1.0
+  beta: 0.15
+  gamma: 0.05
+  edge_weight_floor: 0.05
+  hop_cost: 0.25
+  bridge_max_iters: 20
+  min_gain: 0.001
+  enable_prune: true
+  budget_nodes: 80
+  source_rerank: false
+

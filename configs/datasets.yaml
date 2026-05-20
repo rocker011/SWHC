@@ -1,0 +1,13 @@
+datasets:
+  hypergraphrag_five_domain:
+    - hypertension
+    - agriculture
+    - cs
+    - legal
+    - mix
+  public:
+    - hotpotqa
+    - 2wikimultihopqa
+    - musique
+    - popqa
+
