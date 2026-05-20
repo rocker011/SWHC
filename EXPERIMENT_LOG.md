@@ -1,5 +1,53 @@
 # EXPERIMENT_LOG.md
 
+## 2026-05-20 - 迁移后最小冒烟测试 - hotpotqa_probe
+
+- Goal:
+  - 补充轻量测试文件。
+  - 在尽量减少 API token 消耗的前提下，检查迁移后的 SWHC 与已迁移 baseline 是否能完成最小实验链路。
+- Code version:
+  - 本仓库 `main` 分支，初始提交之后的测试与上下文补充变更。
+- Commands:
+  - `python -m unittest discover -s tests -p "test_*.py" -v`
+  - `python script_insert.py --cls hotpotqa_probe`
+  - `python script_naivegeneration.py --data_source hotpotqa_probe`
+  - `python script_bm25.py --data_source hotpotqa_probe --chunk_top_k 2 --token_budget 1000`
+  - `python script_standardrag.py --data_source hotpotqa_probe --chunk_top_k 2 --token_budget 1000`
+  - `python script_hybrid_rag.py --data_source hotpotqa_probe --bm25_top_k 2 --dense_top_k 2 --token_budget 1000 --rrf_k 10`
+  - `python script_hypergraphrag.py --data_source hotpotqa_probe`
+  - `python script_swhc.py --data_source hotpotqa_probe`
+  - `python script_graphrag.py --data_source hotpotqa_probe`
+- Config:
+  - 数据集：`hotpotqa_probe`
+  - 并发：`HGRAG_QUERY_CONCURRENCY=1`
+  - BM25 / dense 检索 top-k 均使用小值。
+  - token budget 使用 `1000`。
+  - SWHC 关闭 source rerank：`HGRAG_SWHC_SOURCE_RERANK=false`。
+  - LLM 后端使用本地 `.env` 中配置的 `deepseek-v4-flash`。
+- Output:
+  - 索引目录：`evaluation/expr/hotpotqa_probe/`
+  - 最小生成结果：
+    - `evaluation/results/NaiveGeneration/hotpotqa_probe/test_knowledge.json`
+    - `evaluation/results/BM25/hotpotqa_probe/test_knowledge.json`
+    - `evaluation/results/StandardRAG/hotpotqa_probe/test_knowledge.json`
+    - `evaluation/results/HybridRAG/hotpotqa_probe/test_knowledge.json`
+    - `evaluation/results/HyperGraphRAG/hotpotqa_probe/test_knowledge.json`
+    - `evaluation/results/SWHC/hotpotqa_probe/test_knowledge.json`
+- Result summary:
+  - 单元测试通过：`5 tests OK`。
+  - `hotpotqa_probe` Step1 索引生成成功。
+  - `NaiveGeneration`、`BM25`、`StandardRAG`、`HybridRAG`、`HyperGraphRAG`、`SWHC` 均完成最小 Step2 生成。
+  - official `GraphRAG` baseline 未运行成功，原因是缺少 `evaluation/expr_official_graphrag/hotpotqa_probe/` workspace。
+- Comparability:
+  - 本次只做迁移后的 smoke test，不作为论文结果。
+  - 未运行 Step3 LLM judge，也未做完整数据集评测。
+- Outcome:
+  - 迁移后的 SWHC 与主要本地 baseline 最小链路可运行。
+  - official GraphRAG 仍需先准备或迁移官方 workspace。
+- Next action:
+  - 补齐 official GraphRAG workspace 构建流程。
+  - 选择 `hotpotqa_64` 或 `hypertension` 做下一轮低成本 parity check。
+
 ## 用途
 
 这是 `SWHC` 独立仓库的追加式实验与迁移记录。

@@ -60,6 +60,19 @@
 - `evaluation/datasets/legal`
 - `evaluation/datasets/mix`
 
+### 可用上下文文件
+
+- `evaluation/contexts/agriculture_contexts.json`
+- `evaluation/contexts/cs_contexts.json`
+- `evaluation/contexts/hotpotqa_contexts.json`
+- `evaluation/contexts/hotpotqa_64_contexts.json`
+- `evaluation/contexts/hotpotqa_probe_contexts.json`
+- `evaluation/contexts/hypertension_contexts.json`
+- `evaluation/contexts/legal_contexts.json`
+- `evaluation/contexts/mix_contexts.json`
+
+这些文件用于部分 legacy baseline 和上下文复用实验。它们来自原始 `HyperGraphRAG` 仓库，不包含密钥。
+
 ### 上游文档和实验记录
 
 - `docs/upstream_hypergraphrag/AGENTS.md`

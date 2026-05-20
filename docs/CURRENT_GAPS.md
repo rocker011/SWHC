@@ -2,6 +2,20 @@
 
 最后更新：`2026-05-20`
 
+## 本次最小验证结论
+
+- 单元测试已补充并通过：`5 tests OK`。
+- `hotpotqa_probe` 已完成最小 Step1 索引构建。
+- 以下方法已完成最小 Step2 生成：
+  - `NaiveGeneration`
+  - `BM25`
+  - `StandardRAG`
+  - `HybridRAG`
+  - `HyperGraphRAG`
+  - `SWHC`
+- official `GraphRAG` 仍缺少 `evaluation/expr_official_graphrag/hotpotqa_probe/` workspace，因此当前不能直接运行。
+- 本次没有运行 Step3 LLM judge，也没有跑完整数据集，以控制 API token 消耗。
+
 ## 已经具备
 
 - SWHC 独立仓库骨架。
@@ -23,6 +37,15 @@
   - `hotpotqa`
   - `hotpotqa_64`
   - `hotpotqa_probe`
+- 当前已迁移上下文文件：
+  - `agriculture_contexts.json`
+  - `cs_contexts.json`
+  - `hotpotqa_contexts.json`
+  - `hotpotqa_64_contexts.json`
+  - `hotpotqa_probe_contexts.json`
+  - `hypertension_contexts.json`
+  - `legal_contexts.json`
+  - `mix_contexts.json`
 - `.env` / `.env.example` 已配置为 `deepseekv4flash`。
 - 配置读取器已支持优先读取环境变量和 `.env`。
 
@@ -40,7 +63,7 @@ OPENAI_API_KEY=你的真实key
 
 ### 2. Parity check
 
-新仓库还没有和旧仓库做 SWHC 输出一致性对齐。
+新仓库已经完成 `hotpotqa_probe` 最小可运行检查，但还没有和旧仓库做 SWHC 输出一致性对齐。
 
 优先做：
 
@@ -84,15 +107,16 @@ OPENAI_API_KEY=你的真实key
 - `evaluation/expr/`
 - `evaluation/expr_official_graphrag/`
 
-因此如果要直接跑 Step2，需要先确认对应数据集是否已经完成 Step1 索引，或重新构建索引。
+当前本地已经为 `hotpotqa_probe` 重新生成 `evaluation/expr/hotpotqa_probe/`，但该目录仍作为运行产物被 `.gitignore` 忽略。
+
+official `GraphRAG` 需要 `evaluation/expr_official_graphrag/<dataset>/`，目前仍缺少，需单独构建或迁移。
 
 ### 7. 测试体系还不完整
 
-当前只有轻量 diagnostics 测试。
+当前已有轻量 diagnostics、SWHC tiny graph、BM25 index 与本地配置读取测试。
 
 下一步需要补：
 
-- tiny hypergraph fixture
 - objective 单元测试
 - solver snapshot/parity 测试
 - context export 测试
