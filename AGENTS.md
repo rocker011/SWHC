@@ -26,6 +26,8 @@
 
 不要因为新建了独立仓库就重新规划一套完全不同的方法路线；本仓库应继承旧仓库中已经验证过的 SWHC 研究脉络。
 
+动态任务、当前实验设定和当前缺口只维护在 `TASK.md`，不要在多个文档里重复更新同一份计划。
+
 ## 项目目标
 
 本仓库有两层目标：
@@ -235,14 +237,4 @@ $env:HGRAG_ENABLE_LLM_JUDGE="false"
 
 ## 当前首要方向
 
-本仓库当前不是重新做 baseline plumbing，而是：
-
-1. 完成迁移后 parity check。
-2. 把 SWHC 从 legacy 拆成清晰模块。
-3. 围绕论文主线优化方法：
-   - hypergraph-aware distance
-   - terminal selection
-   - objective refinement
-   - query-aware evidence compression
-   - answer-candidate exposure
-
+当前首要方向以 `TASK.md` 为准。`AGENTS.md` 只维护长期规则和方法边界。

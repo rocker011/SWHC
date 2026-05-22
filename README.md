@@ -14,6 +14,8 @@
 - 已迁移 SWHC 行为保持实现到 `swhc/legacy/`。
 - 已建立 `swhc/core/`、`swhc/adapters/`、`swhc/diagnostics/`。
 - 已迁移旧仓库文档、实验记录、baseline、评测脚本和当前可用数据集。
+- 已完成 `hotpotqa_probe` 严格 parity check。
+- 当前进入 SWHC 方法优化阶段。
 - 已整理中文项目治理文件：
   - `AGENTS.md`
   - `TASK.md`
@@ -55,18 +57,15 @@
 
 任何后续关于 objective、semantic distance、solver、terminal selection、source rerank 或 evidence compression 的改动，都必须记录到 `EXPERIMENT_LOG.md`，并说明是否影响旧结果可比性。
 
-## 下一步
+## 当前优化阶段
 
-优先做 SWHC parity check：
+当前任务、优化阶段设定和缺口统一维护在：
 
-1. 用新仓库跑小样本 SWHC Step2。
-2. 与旧仓库相同参数下的 `test_knowledge.json` 对齐。
-3. 确认迁移没有引入行为漂移。
-4. 再开始拆分 `swhc/core/` 的真实实现。
+`TASK.md`
 
 ## 本地实验配置
 
-本仓库支持从 `.env` 读取本地实验配置。当前 `.env.example` 已按 `deepseekv4flash` 配好模板。
+本仓库支持从 `.env` 读取本地实验配置。当前 `.env.example` 已按 `deepseek-v4-flash` 配好模板。
 
 使用前需要把 `.env` 里的 `OPENAI_API_KEY` 替换为真实 key。
 
@@ -76,6 +75,6 @@ PowerShell 中也可以显式加载：
 . .\scripts\load_env.ps1
 ```
 
-当前缺口清单见：
+实验和重要工程变更记录见：
 
-`docs/CURRENT_GAPS.md`
+`EXPERIMENT_LOG.md`

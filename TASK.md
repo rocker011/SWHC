@@ -1,12 +1,20 @@
 # TASK.md
 
-最后更新：`2026-05-20`
+最后更新：`2026-05-23`
 
 ## 当前阶段
 
-当前处于 **迁移整理 + 行为一致性校验 + SWHC 模块化重构准备** 阶段。
+当前进入 **SWHC 方法优化阶段**。
 
-目标不是立刻改方法，而是先把旧仓库中已经完成的 SWHC、baseline、数据集和实验记录整理成一个独立研究仓库，并保证迁移后的实现可以复现旧行为。
+迁移、基础 smoke test 和 `hotpotqa_probe` 严格 parity check 已完成。后续优化以 `SWHC-legacy` 为冻结基线，在 `SWHC-new` 中做可追溯改动。
+
+## 文档维护原则
+
+- 经常更新的文档只保留两个：
+  - `TASK.md`：当前阶段、实验设定、下一步任务和缺口。
+  - `EXPERIMENT_LOG.md`：已经发生的实验、迁移、检查和重要工程变更。
+- `README.md`、`AGENTS.md`、`ARCHITECTURE.md`、`MIGRATION_MANIFEST.md` 尽量保持稳定，不重复维护当前实验细节。
+- `docs/upstream_hypergraphrag/` 和 `UPSTREAM_EXPERIMENT_LOG.md` 是归档材料，不作为当前任务看板。
 
 ## 已完成
 
@@ -56,25 +64,39 @@
    - 核心 baseline imports 通过
    - `script_swhc.py --help` 通过
 
+9. 已完成严格 parity check：
+   - 核心迁移文件哈希一致
+   - tiny graph solver 输出一致
+   - 同一旧索引、同一固定关键词下的 context 输出一致
+   - 报告：`reports/parity/hotpotqa_probe/parity_report.json`
+
 ## P0：当前必须先做
 
-1. **SWHC parity check**
-   - 目标：确认新仓库迁移版 SWHC 与旧仓库同参数输出一致。
-   - 优先数据集：
-     - `hotpotqa_probe`
-     - `hotpotqa_64`
-     - `hypertension` 小样本
-   - 输出：
-     - 对比 `test_knowledge.json`
-     - 记录差异来源
-     - 若完全一致，标记 legacy parity baseline 成立
+1. **冻结 legacy baseline**
+   - `swhc/legacy/` 不作为优化改动位置。
+   - 当前 `evaluation/methods/swhc.py` 对应 `SWHC-legacy`。
+   - 后续新增 `SWHC-new` 时，必须使用独立入口和独立结果目录，避免覆盖 legacy 结果。
 
-2. **配置整理**
-   - 新仓库不迁移 `api_config.txt`。
-   - 需要写明本地如何放置私有 API 配置。
-   - 避免把 key、base url、供应商配置提交到仓库。
+2. **优化阶段固定实验设置**
+   - 数据集：`hotpotqa_64`
+   - 方法：
+     - `HybridRAG`
+     - `HyperGraphRAG`
+     - `SWHC-legacy`
+     - `SWHC-new`
+   - 模型：`deepseek-v4-flash`
+   - 模式：非 thinking
+   - LLM judge：关闭，`HGRAG_ENABLE_LLM_JUDGE=false`
+   - source rerank：默认关闭，`HGRAG_SWHC_SOURCE_RERANK=false`
 
-3. **模块化拆分计划**
+3. **实现 SWHC-new 入口**
+   - 目标：让优化版本和 legacy 版本可并行运行、可直接对比。
+   - 输出建议：
+     - `evaluation/results/SWHC-legacy/hotpotqa_64/`
+     - `evaluation/results/SWHC-new/hotpotqa_64/`
+   - 在结果目录和实验日志里显式记录 variant 名称。
+
+4. **模块化拆分计划**
    - 当前 `swhc/core/*` 仍是 facade。
    - 下一步逐个从 `swhc/legacy/swhc.py` 拆出真实实现：
      - `terminal_selection.py`
@@ -84,7 +106,7 @@
      - `export.py`
    - 每拆一个模块，都要跑 tiny fixture 和 parity check。
 
-4. **tiny hypergraph fixture**
+5. **tiny hypergraph fixture**
    - 在 `tests/fixtures/` 建一个最小 hypergraph。
    - 覆盖：
      - terminal weight
@@ -95,7 +117,7 @@
      - pruning
      - context export
 
-5. **论文方法草稿**
+6. **论文方法草稿**
    - 在 `paper/method.md` 写出：
      - 问题定义
      - hypergraph representation
@@ -150,9 +172,22 @@
    - answer-in-source rate
    - answer-in-entities/relationships rate
 
+## 当前缺口
+
+- `SWHC-new` 独立入口尚未实现。
+- `hotpotqa_64` 的 V4-Flash 四方法对比尚未运行。
+- official `GraphRAG` 仍缺少 `evaluation/expr_official_graphrag/<dataset>/` workspace。
+- `LightRAG`、`PathRAG` 尚未接入；优化阶段暂不处理。
+- 目标公开数据集 `2WikiMultiHopQA`、`MuSiQue`、`PopQA` 尚未准备；优化阶段先不扩展。
+- 测试还缺 objective、solver snapshot/parity、context export 的细粒度覆盖。
+- `pyproject.toml` 仍是最小依赖声明，完整评测继续优先使用已有 `hypergraphrag` conda 环境。
+
 ## 当前默认实验约束
 
 - 中间实验默认关闭 LLM judge。
+- 当前优化阶段固定使用 `deepseek-v4-flash` 非 thinking 模式。
+- 当前优化阶段固定数据集为 `hotpotqa_64`。
+- 当前优化阶段固定方法为 `HybridRAG`、`HyperGraphRAG`、`SWHC-legacy`、`SWHC-new`。
 - 不重跑已经完成的大型 pipeline，除非明确需要。
 - 修改 SWHC objective、edge weighting、terminal selection、solver、source rerank 时，必须说明旧结果不可直接比较。
 - `HGRAG_SWHC_SOURCE_RERANK` 默认保持 `false`。
@@ -168,4 +203,3 @@
 迁移清单见：
 
 - `MIGRATION_MANIFEST.md`
-

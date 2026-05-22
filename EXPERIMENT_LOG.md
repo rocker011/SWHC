@@ -1,5 +1,55 @@
 # EXPERIMENT_LOG.md
 
+## 2026-05-23 - 文档结构收敛
+
+- Goal:
+  - 减少需要经常更新的文档数量，避免优化阶段计划分散在多个文件中。
+- Changes:
+  - 将优化阶段设定和当前缺口合并到 `TASK.md`。
+  - 删除独立的 `docs/OPTIMIZATION_STAGE.md` 和 `docs/CURRENT_GAPS.md`。
+  - `README.md` 只保留入口链接。
+  - `AGENTS.md` 只保留长期规则和方法边界。
+- Outcome:
+  - 后续经常更新的文档只保留 `TASK.md` 与 `EXPERIMENT_LOG.md`。
+
+## 2026-05-23 - SWHC 优化阶段实验设定冻结
+
+- Goal:
+  - 将仓库状态从迁移/parity 阶段切换到 SWHC 方法优化阶段。
+  - 固定第一轮优化实验的数据集、方法集合、模型和 judge 设置。
+- Code version:
+  - 文档更新，不改实验代码。
+- Command:
+  - 未运行实验。
+- Config:
+  - 数据集：`hotpotqa_64`
+  - 方法：
+    - `HybridRAG`
+    - `HyperGraphRAG`
+    - `SWHC-legacy`
+    - `SWHC-new`
+  - 模型：`deepseek-v4-flash`
+  - 模式：非 thinking
+  - LLM judge：关闭，`HGRAG_ENABLE_LLM_JUDGE=false`
+  - source rerank：默认关闭，`HGRAG_SWHC_SOURCE_RERANK=false`
+- Output:
+  - 更新 `TASK.md`
+  - 更新 `README.md`
+  - 更新 `AGENTS.md`
+  - 更新 `.env.example`
+- Result summary:
+  - 后续优化实验以 `hotpotqa_64` 为第一轮主数据集。
+  - `SWHC-legacy` 作为冻结基线，`SWHC-new` 作为优化版本。
+  - V3.2 历史结果只作为参考，不与 V4-Flash 新结果混合作为论文主表。
+- Comparability:
+  - 本次只是实验设定更新，不产生新结果。
+  - 后续任何 SWHC-new 改动都必须说明与 legacy 结果的可比性。
+- Outcome:
+  - 优化阶段实验边界已固定。
+- Next action:
+  - 新增 `SWHC-new` 独立入口和结果目录。
+  - 在 `hotpotqa_probe` smoke test 后，运行 `hotpotqa_64` 四方法对比。
+
 ## 2026-05-22 - SWHC 迁移严格 parity check - hotpotqa_probe
 
 - Goal:
@@ -255,10 +305,10 @@
 - Next action:
   - 运行语法和导入检查。
 
-## 2026-05-20 - SWHC - deepseekv4flash 本地环境配置
+## 2026-05-20 - SWHC - deepseek-v4-flash 本地环境配置
 
 - Goal:
-  - 配置新仓库的本地 `.env`，默认使用 `deepseekv4flash` 做生成和 judge 模型。
+  - 配置新仓库的本地 `.env`，默认使用 `deepseek-v4-flash` 做生成和 judge 模型。
   - 让评测配置支持从环境变量或 `.env` 读取，减少对 `api_config.txt` 的依赖。
 - Changes:
   - 新增 `.env`
@@ -268,9 +318,9 @@
   - 新增 `docs/CURRENT_GAPS.md`
 - Config:
   - `OPENAI_BASE_URL=https://api.deepseek.com`
-  - `OPENAI_MODEL=deepseekv4flash`
-  - `HGRAG_GENERATION_MODEL=deepseekv4flash`
-  - `HGRAG_JUDGE_MODEL=deepseekv4flash`
+  - `OPENAI_MODEL=deepseek-v4-flash`
+  - `HGRAG_GENERATION_MODEL=deepseek-v4-flash`
+  - `HGRAG_JUDGE_MODEL=deepseek-v4-flash`
   - `OPENAI_EMBED_MODEL=local:Qwen/Qwen3-Embedding-0.6B`
   - `HGRAG_ENABLE_LLM_JUDGE=false`
   - `HGRAG_SWHC_SOURCE_RERANK=false`
