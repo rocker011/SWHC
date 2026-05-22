@@ -4,6 +4,11 @@
 
 ## 本次最小验证结论
 
+- 严格 parity check 已完成：
+  - 核心 SWHC 迁移文件哈希一致。
+  - tiny graph solver 输出一致。
+  - 同一旧索引、同一固定关键词下的 SWHC context 输出一致。
+  - 报告见 `reports/parity/hotpotqa_probe/parity_report.json`。
 - 单元测试已补充并通过：`5 tests OK`。
 - `hotpotqa_probe` 已完成最小 Step1 索引构建。
 - 以下方法已完成最小 Step2 生成：
@@ -63,11 +68,10 @@ OPENAI_API_KEY=你的真实key
 
 ### 2. Parity check
 
-新仓库已经完成 `hotpotqa_probe` 最小可运行检查，但还没有和旧仓库做 SWHC 输出一致性对齐。
+新仓库已经完成 `hotpotqa_probe` 严格 parity check。
 
-优先做：
+后续若要扩大 parity 范围，优先做：
 
-- `hotpotqa_probe`
 - `hotpotqa_64`
 - `hypertension` 小样本
 

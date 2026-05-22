@@ -1,0 +1,92 @@
+{
+  "created_at": "2026-05-23T00:07:21",
+  "old_root": "D:\\PythonProjects\\HyperGraphRAG",
+  "new_root": "D:\\PythonProjects\\SWHC",
+  "dataset": "hotpotqa_probe",
+  "parity_dataset": "hotpotqa_probe_parity",
+  "query": "Were Scott Derrickson and Ed Wood of the same nationality?",
+  "low_keywords": "SCOTT DERRICKSON, ED WOOD, AMERICAN",
+  "high_keywords": "<hyperedge>SCOTT DERRICKSON ED WOOD NATIONALITY",
+  "core_files": [
+    {
+      "path": "evaluation/hypergraphrag/base.py",
+      "old_exists": true,
+      "new_exists": true,
+      "old_sha256": "3b655758f71fb982042624e5fc5c73a2b15e79f16e1c0e1224043cfc903fb7fc",
+      "new_sha256": "3b655758f71fb982042624e5fc5c73a2b15e79f16e1c0e1224043cfc903fb7fc",
+      "equal": true
+    },
+    {
+      "path": "evaluation/hypergraphrag/swhc.py",
+      "old_exists": true,
+      "new_exists": true,
+      "old_sha256": "2aa96a8a79d8e59ec9a5cc114833a89a8b20931e311d4b91abd68a5322dcfc38",
+      "new_sha256": "2aa96a8a79d8e59ec9a5cc114833a89a8b20931e311d4b91abd68a5322dcfc38",
+      "equal": true
+    },
+    {
+      "path": "evaluation/hypergraphrag/operate.py",
+      "old_exists": true,
+      "new_exists": true,
+      "old_sha256": "77760a069e5676416e91ba1fd51b9485506ecaffb6da2f2a72ebab614df8100b",
+      "new_sha256": "77760a069e5676416e91ba1fd51b9485506ecaffb6da2f2a72ebab614df8100b",
+      "equal": true
+    },
+    {
+      "path": "evaluation/methods/common.py",
+      "old_exists": true,
+      "new_exists": true,
+      "old_sha256": "894b3a70295738574523400cd22e088ae7e5b15b267fc43066a1a450d17d18bc",
+      "new_sha256": "894b3a70295738574523400cd22e088ae7e5b15b267fc43066a1a450d17d18bc",
+      "equal": true
+    },
+    {
+      "path": "evaluation/methods/swhc.py",
+      "old_exists": true,
+      "new_exists": true,
+      "old_sha256": "9de9b527fb13e76824ecc2af15000e146473ce5f79287822534f68a1494b0822",
+      "new_sha256": "9de9b527fb13e76824ecc2af15000e146473ce5f79287822534f68a1494b0822",
+      "equal": true
+    }
+  ],
+  "core_files_equal": true,
+  "fixed_input_checks": {
+    "runs": {
+      "old_solver": {
+        "returncode": 0,
+        "stdout_tail": "INFO:hypergraphrag:SWHC query uses 3 entities, 2 relations, 2 text units\n"
+      },
+      "new_solver": {
+        "returncode": 0,
+        "stdout_tail": "INFO:hypergraphrag:SWHC query uses 3 entities, 2 relations, 2 text units\n"
+      },
+      "old_context": {
+        "returncode": 0,
+        "stdout_tail": "INFO:hypergraphrag:Logger initialized for working directory: expr/hotpotqa_probe\nINFO:hypergraphrag:Local embedding detected; reducing embedding_batch_num from 32 to 8\nINFO:hypergraphrag:Load KV llm_response_cache with 0 data\nINFO:hypergraphrag:Load KV full_docs with 1 data\nINFO:hypergraphrag:Load KV text_chunks with 2 data\nINFO:hypergraphrag:Loaded graph from expr/hotpotqa_probe\\graph_chunk_entity_relation.graphml with 7 nodes, 6 edges\nINFO:nano-vectordb:Load (4, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe\\\\vdb_entities.json'} 4 data\nINFO:nano-vectordb:Load (3, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe\\\\vdb_hyperedges.json'} 3 data\nINFO:nano-vectordb:Load (2, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe\\\\vdb_chunks.json'} 2 data\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/config.json \"HTTP/1.1 307 Temporary Redirect\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/config.json \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/tokenizer_config.json \"HTTP/1.1 307 Temporary Redirect\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/tokenizer_config.json \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B/tree/main/additional_chat_templates?recursive=false&expand=false \"HTTP/1.1 404 Not Found\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B/tree/main?recursive=true&expand=false \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/config.json \"HTTP/1.1 307 Temporary Redirect\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/config.json \"HTTP/1.1 200 OK\"\n\nLoading weights:   0%|          | 0/310 [00:00<?, ?it/s]\nLoading weights:  61%|██████▏   | 190/310 [00:00<00:00, 1895.86it/s]\nLoading weights: 100%|██████████| 310/310 [00:00<00:00, 1947.75it/s]\nINFO:hypergraphrag:Loaded local embedding model Qwen/Qwen3-Embedding-0.6B on cuda\nINFO:hypergraphrag:SWHC query uses 3 entities, 3 relations, 1 text units\n"
+      },
+      "new_context": {
+        "returncode": 0,
+        "stdout_tail": "INFO:hypergraphrag:Logger initialized for working directory: expr/hotpotqa_probe_parity\nINFO:hypergraphrag:Local embedding detected; reducing embedding_batch_num from 32 to 8\nINFO:hypergraphrag:Load KV llm_response_cache with 0 data\nINFO:hypergraphrag:Load KV full_docs with 1 data\nINFO:hypergraphrag:Load KV text_chunks with 2 data\nINFO:hypergraphrag:Loaded graph from expr/hotpotqa_probe_parity\\graph_chunk_entity_relation.graphml with 7 nodes, 6 edges\nINFO:nano-vectordb:Load (4, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe_parity\\\\vdb_entities.json'} 4 data\nINFO:nano-vectordb:Load (3, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe_parity\\\\vdb_hyperedges.json'} 3 data\nINFO:nano-vectordb:Load (2, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe_parity\\\\vdb_chunks.json'} 2 data\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/config.json \"HTTP/1.1 307 Temporary Redirect\"\nWarning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\nWARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/config.json \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/tokenizer_config.json \"HTTP/1.1 307 Temporary Redirect\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/tokenizer_config.json \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B/tree/main/additional_chat_templates?recursive=false&expand=false \"HTTP/1.1 404 Not Found\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B/tree/main?recursive=true&expand=false \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/config.json \"HTTP/1.1 307 Temporary Redirect\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/config.json \"HTTP/1.1 200 OK\"\n\nLoading weights:   0%|          | 0/310 [00:00<?, ?it/s]\nLoading weights:  60%|██████    | 187/310 [00:00<00:00, 1846.21it/s]\nLoading weights: 100%|██████████| 310/310 [00:00<00:00, 1880.79it/s]\nINFO:hypergraphrag:Loaded local embedding model Qwen/Qwen3-Embedding-0.6B on cuda\nINFO:hypergraphrag:SWHC query uses 3 entities, 3 relations, 1 text units\n"
+      }
+    },
+    "solver_equal": true,
+    "context_equal": true,
+    "old_solver_sha256": "538f2d015f7b4f521e5386e23d3f7143dae3382b0ff1354510e930e81161f817",
+    "new_solver_sha256": "538f2d015f7b4f521e5386e23d3f7143dae3382b0ff1354510e930e81161f817",
+    "old_context_sha256": "b45adeca99e36cc7fef137a42afdac41a86b0f0776e09598110b14676183675e",
+    "new_context_sha256": "b45adeca99e36cc7fef137a42afdac41a86b0f0776e09598110b14676183675e",
+    "context_length": 1035
+  },
+  "live_e2e_probe": {
+    "old_returncode": 0,
+    "new_returncode": 0,
+    "old_stdout_tail": "INFO:hypergraphrag:Logger initialized for working directory: expr/hotpotqa_probe\nINFO:hypergraphrag:Local embedding detected; reducing embedding_batch_num from 32 to 8\nINFO:hypergraphrag:Load KV llm_response_cache with 0 data\nINFO:hypergraphrag:Load KV full_docs with 1 data\nINFO:hypergraphrag:Load KV text_chunks with 2 data\nINFO:hypergraphrag:Loaded graph from expr/hotpotqa_probe\\graph_chunk_entity_relation.graphml with 7 nodes, 6 edges\nINFO:nano-vectordb:Load (4, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe\\\\vdb_entities.json'} 4 data\nINFO:nano-vectordb:Load (3, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe\\\\vdb_hyperedges.json'} 3 data\nINFO:nano-vectordb:Load (2, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe\\\\vdb_chunks.json'} 2 data\n\n  0%|          | 0/1 [00:00<?, ?it/s]INFO:httpx:HTTP Request: POST https://api.deepseek.com/chat/completions \"HTTP/1.1 200 OK\"\nINFO:hypergraphrag:kw_prompt result:\nINFO:hypergraphrag:(\"hyper-relation\"<|>\"Were Scott Derrickson and Ed Wood of the same nationality?\"<|>8)##\n(\"entity\"<|>\"Scott Derrickson\"<|>\"person\"<|>\"Scott Derrickson is a person mentioned in the question about nationality.\"<|>85)##\n(\"entity\"<|>\"Ed Wood\"<|>\"person\"<|>\"Ed Wood is a person mentioned in the question about nationality.\"<|>85)##\n(\"entity\"<|>\"nationality\"<|>\"concept\"<|>\"Nationality is the attribute being compared between Scott Derrickson and Ed Wood.\"<|>90)##\n<|COMPLETE|>\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/config.json \"HTTP/1.1 307 Temporary Redirect\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/config.json \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/tokenizer_config.json \"HTTP/1.1 307 Temporary Redirect\"\nWarning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\nWARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/tokenizer_config.json \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B/tree/main/additional_chat_templates?recursive=false&expand=false \"HTTP/1.1 404 Not Found\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B/tree/main?recursive=true&expand=false \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/config.json \"HTTP/1.1 307 Temporary Redirect\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/config.json \"HTTP/1.1 200 OK\"\n\n\nLoading weights:   0%|          | 0/310 [00:00<?, ?it/s]\u001b[A\n\nLoading weights:  62%|██████▏   | 192/310 [00:00<00:00, 1917.38it/s]\u001b[A\nLoading weights: 100%|██████████| 310/310 [00:00<00:00, 1978.05it/s]\nINFO:hypergraphrag:Loaded local embedding model Qwen/Qwen3-Embedding-0.6B on cuda\nINFO:hypergraphrag:SWHC query uses 2 entities, 3 relations, 1 text units\n\n100%|██████████| 1/1 [00:09<00:00,  9.81s/it]\n100%|██████████| 1/1 [00:09<00:00,  9.81s/it]\nResults saved to D:/PythonProjects/HyperGraphRAG/evaluation/results/SWHC/hotpotqa_probe/test_knowledge.json\n",
+    "new_stdout_tail": "INFO:hypergraphrag:Logger initialized for working directory: expr/hotpotqa_probe_parity\nINFO:hypergraphrag:Local embedding detected; reducing embedding_batch_num from 32 to 8\nINFO:hypergraphrag:Load KV llm_response_cache with 0 data\nINFO:hypergraphrag:Load KV full_docs with 1 data\nINFO:hypergraphrag:Load KV text_chunks with 2 data\nINFO:hypergraphrag:Loaded graph from expr/hotpotqa_probe_parity\\graph_chunk_entity_relation.graphml with 7 nodes, 6 edges\nINFO:nano-vectordb:Load (4, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe_parity\\\\vdb_entities.json'} 4 data\nINFO:nano-vectordb:Load (3, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe_parity\\\\vdb_hyperedges.json'} 3 data\nINFO:nano-vectordb:Load (2, 1024) data\nINFO:nano-vectordb:Init {'embedding_dim': 1024, 'metric': 'cosine', 'storage_file': 'expr/hotpotqa_probe_parity\\\\vdb_chunks.json'} 2 data\n\n  0%|          | 0/1 [00:00<?, ?it/s]INFO:httpx:HTTP Request: POST https://api.deepseek.com/chat/completions \"HTTP/1.1 200 OK\"\nINFO:hypergraphrag:kw_prompt result:\nINFO:hypergraphrag:(\"hyper-relation\"<|>\"Were Scott Derrickson and Ed Wood of the same nationality?\"<|>10)##\n(\"entity\"<|>\"Scott Derrickson\"<|>\"person\"<|>\"Scott Derrickson is a person whose nationality is questioned in relation to Ed Wood.\"<|>90)##\n(\"entity\"<|>\"Ed Wood\"<|>\"person\"<|>\"Ed Wood is a person whose nationality is questioned in relation to Scott Derrickson.\"<|>90)##\n(\"entity\"<|>\"nationality\"<|>\"concept\"<|>\"Nationality is a concept indicating the country of origin or citizenship of a person.\"<|>80)##\n<|COMPLETE|>\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/config.json \"HTTP/1.1 307 Temporary Redirect\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/config.json \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/tokenizer_config.json \"HTTP/1.1 307 Temporary Redirect\"\nWarning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\nWARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/tokenizer_config.json \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B/tree/main/additional_chat_templates?recursive=false&expand=false \"HTTP/1.1 404 Not Found\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B/tree/main?recursive=true&expand=false \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-Embedding-0.6B \"HTTP/1.1 200 OK\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/resolve/main/config.json \"HTTP/1.1 307 Temporary Redirect\"\nINFO:httpx:HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/Qwen/Qwen3-Embedding-0.6B/97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3/config.json \"HTTP/1.1 200 OK\"\n\n\nLoading weights:   0%|          | 0/310 [00:00<?, ?it/s]\u001b[A\n\nLoading weights:  61%|██████▏   | 190/310 [00:00<00:00, 1884.56it/s]\u001b[A\nLoading weights: 100%|██████████| 310/310 [00:00<00:00, 1875.08it/s]\nINFO:hypergraphrag:Loaded local embedding model Qwen/Qwen3-Embedding-0.6B on cuda\nINFO:hypergraphrag:SWHC query uses 2 entities, 3 relations, 1 text units\n\n100%|██████████| 1/1 [00:09<00:00,  9.63s/it]\n100%|██████████| 1/1 [00:09<00:00,  9.63s/it]\nResults saved to D:/PythonProjects/SWHC/evaluation/results/SWHC/hotpotqa_probe_parity/test_knowledge.json\n",
+    "equal": true,
+    "old_result_sha256": "7cfa70f5761b7a21162807e872c69c418a2d2a24958a5b79cd553fac15403732",
+    "new_result_sha256": "7cfa70f5761b7a21162807e872c69c418a2d2a24958a5b79cd553fac15403732",
+    "strict_parity_gate": false,
+    "note": "This probe uses live keyword extraction. It is not a strict parity gate because only_need_context=True returns before writing the final context to llm_response_cache, and keyword extraction itself is not cached."
+  },
+  "pass": true
+}

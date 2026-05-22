@@ -1,0 +1,28 @@
+[
+    {
+        "question": "Were Scott Derrickson and Ed Wood of the same nationality?",
+        "golden_answers": [
+            "yes"
+        ],
+        "context": [
+            "Scott Derrickson (born July 16, 1966) is an American director, screenwriter and producer.",
+            "Edward Davis Wood Jr. (October 10, 1924 – December 10, 1978) was an American filmmaker, actor, writer, producer, and director."
+        ],
+        "nary": 2,
+        "nhop": 2,
+        "hotpotqa_id": "5a8b57f25542995d1e6f1371",
+        "type": "comparison",
+        "level": "hard",
+        "supporting_facts": {
+            "title": [
+                "Scott Derrickson",
+                "Ed Wood"
+            ],
+            "sent_id": [
+                0,
+                0
+            ]
+        },
+        "knowledge": "\n-----Entities-----\n```csv\nid,entity,type,description\r\n0,\"\"\"CAREER\"\"\",\"\"\"CONCEPT\"\"\",\"\"\"The person's career is described as ending because of the accident.\"\"\"\r\n1,\"\"\"CAREER-ENDING CAR ACCIDENT\"\"\",\"\"\"EVENT\"\"\",\"\"\"A car accident is described as having ended a career, implying a major turning point in the person's life.\"\"<SEP>\"\"A car accident that ended a career is mentioned as the relevant life event.\"\"\"\r\n\n```\n-----Relationships-----\n```csv\nid,hyperedge,related_entities\r\n0,\"<hyperedge>\"\"The mystic arts are associated with a career-ending car accident.\"\"\",\"\"\"CAREER-ENDING CAR ACCIDENT\"\"\"\r\n1,\"<hyperedge>\"\"The text indicates a transition to the mystic arts following a career-ending car accident.\"\"\",\"\"\"CAREER-ENDING CAR ACCIDENT\"\"\"\r\n2,\"<hyperedge>\"\"A career-ending car accident serves as the pivotal event that precedes involvement in the mystic arts.\"\"\",\"\"\"CAREER\"\"\"\r\n\n```\n-----Sources-----\n```csv\nid,content\r\n0,the mystic arts after a career-ending car accident.\r\n\n```\n"
+    }
+]

@@ -1,5 +1,46 @@
 # EXPERIMENT_LOG.md
 
+## 2026-05-22 - SWHC 迁移严格 parity check - hotpotqa_probe
+
+- Goal:
+  - 验证新仓库迁移版本在开始优化前，与旧仓库 SWHC 行为一致。
+  - 允许使用 DeepSeek API，但尽量把严格比较从实时 LLM 波动中剥离出来。
+- Code version:
+  - 新仓库新增 `tools/parity_check.py`。
+- Command:
+  - `python tools/parity_check.py --old-root D:\PythonProjects\HyperGraphRAG --new-root D:\PythonProjects\SWHC --dataset hotpotqa_probe --run-e2e-cache-replay`
+- Config:
+  - 数据集：`hotpotqa_probe`
+  - 严格比较使用旧仓库同一份 `evaluation/expr/hotpotqa_probe` 索引。
+  - 固定查询：`Were Scott Derrickson and Ed Wood of the same nationality?`
+  - 固定 low keywords：`SCOTT DERRICKSON, ED WOOD, AMERICAN`
+  - 固定 high keywords：`<hyperedge>SCOTT DERRICKSON ED WOOD NATIONALITY`
+  - live e2e 探针使用 `.env` 中的 `deepseek-v4-flash`。
+- Output:
+  - `reports/parity/hotpotqa_probe/parity_report.json`
+  - `reports/parity/hotpotqa_probe/old_solver.json`
+  - `reports/parity/hotpotqa_probe/new_solver.json`
+  - `reports/parity/hotpotqa_probe/old_context.json`
+  - `reports/parity/hotpotqa_probe/new_context.json`
+- Result summary:
+  - 核心迁移文件哈希一致：
+    - `evaluation/hypergraphrag/base.py`
+    - `evaluation/hypergraphrag/swhc.py`
+    - `evaluation/hypergraphrag/operate.py`
+    - `evaluation/methods/common.py`
+    - `evaluation/methods/swhc.py`
+  - tiny graph solver 输出完全一致。
+  - 同一旧索引、同一固定关键词下的 SWHC context 完全一致。
+  - live DeepSeek e2e 探针本次也输出一致，但不作为严格 parity gate。
+- Comparability:
+  - 本次确认新仓库迁移基线可信，可以开始在 `swhc/core/` 中做方法优化。
+  - live e2e 不作为严格判据，因为当前 `only_need_context=True` 流程不会缓存最终 context，关键词抽取请求也没有单独缓存。
+- Outcome:
+  - 严格 parity check 通过。
+- Next action:
+  - 冻结当前 legacy 行为作为 baseline。
+  - 后续优化前后用 `tools/parity_check.py` 保护迁移基线。
+
 ## 2026-05-20 - 迁移后最小冒烟测试 - hotpotqa_probe
 
 - Goal:

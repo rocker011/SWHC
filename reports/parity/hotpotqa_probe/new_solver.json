@@ -1,0 +1,53 @@
+{
+  "nodes": [
+    "E1",
+    "E2",
+    "E3",
+    "H1",
+    "H2"
+  ],
+  "edges": [
+    [
+      "E1",
+      "H1"
+    ],
+    [
+      "E2",
+      "H1"
+    ],
+    [
+      "E2",
+      "H2"
+    ],
+    [
+      "E3",
+      "H2"
+    ]
+  ],
+  "debug": {
+    "terminals": [
+      "E1",
+      "E3",
+      "H1"
+    ],
+    "candidate_nodes": 5,
+    "candidate_edges": 4,
+    "selected_nodes": [
+      "E1",
+      "H1",
+      "E3",
+      "H2",
+      "E2"
+    ],
+    "added_bridge_paths": [],
+    "objective": {
+      "wiener": 1.265461,
+      "node_cost": 3.216518,
+      "size_penalty": 5.0,
+      "total": 1.997939
+    }
+  },
+  "entities": "id,entity,type,description\r\n0,E1,PERSON,Scott Derrickson is an American filmmaker.\r\n1,E3,PERSON,Ed Wood was an American filmmaker.\r\n2,E2,COUNTRY,American nationality.\r\n",
+  "relationships": "id,hyperedge,related_entities\r\n0,H1,E1|E2\r\n1,H2,E2|E3\r\n",
+  "sources": "id,content\r\n0,Scott Derrickson is an American filmmaker.\r\n1,Ed Wood was an American filmmaker.\r\n"
+}

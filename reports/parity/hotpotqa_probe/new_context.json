@@ -1,0 +1,6 @@
+{
+  "query": "Were Scott Derrickson and Ed Wood of the same nationality?",
+  "low": "SCOTT DERRICKSON, ED WOOD, AMERICAN",
+  "high": "<hyperedge>SCOTT DERRICKSON ED WOOD NATIONALITY",
+  "context": "\n-----Entities-----\n```csv\nid,entity,type,description\r\n0,\"\"\"CAREER\"\"\",\"\"\"CONCEPT\"\"\",\"\"\"The person's career is described as ending because of the accident.\"\"\"\r\n1,\"\"\"MYSTIC ARTS\"\"\",\"\"\"CONCEPT\"\"\",\"\"\"The mystic arts are mentioned as the subject of the text.\"\"<SEP>\"\"The mystic arts are presented as the field or practice being pursued after a major life change.\"\"\"\r\n2,\"\"\"CAR ACCIDENT\"\"\",\"\"\"EVENT\"\"\",\"\"\"A car accident is identified as the incident that led to the end of a career.\"\"\"\r\n\n```\n-----Relationships-----\n```csv\nid,hyperedge,related_entities\r\n0,\"<hyperedge>\"\"The text indicates a transition to the mystic arts following a career-ending car accident.\"\"\",\"\"\"MYSTIC ARTS\"\"\"\r\n1,\"<hyperedge>\"\"The mystic arts are associated with a career-ending car accident.\"\"\",\"\"\"MYSTIC ARTS\"\"\"\r\n2,\"<hyperedge>\"\"A career-ending car accident serves as the pivotal event that precedes involvement in the mystic arts.\"\"\",\"\"\"CAR ACCIDENT\"\"|\"\"CAREER\"\"\"\r\n\n```\n-----Sources-----\n```csv\nid,content\r\n0,the mystic arts after a career-ending car accident.\r\n\n```\n"
+}
