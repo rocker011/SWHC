@@ -11,6 +11,7 @@ import networkx as nx
 from .base import BaseGraphStorage, BaseKVStorage, QueryParam, TextChunkSchema
 from .prompt import GRAPH_FIELD_SEP
 from .utils import (
+    decode_tokens_by_tiktoken,
     encode_string_by_tiktoken,
     list_of_list_to_csv,
     logger,
@@ -26,6 +27,12 @@ class SWHCResult:
 
 
 _SOURCE_RERANK_TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
+_EVIDENCE_SENTENCE_SPLIT_PATTERN = re.compile(r"(?<=[.!?])\s+|\n+")
+_ANSWER_LIKE_PATTERN = re.compile(
+    r"\b\d[\d,]*(?:\.\d+)?\b"
+    r"|\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\b"
+    r"|(?:\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,5}\b)"
+)
 _SOURCE_RERANK_STOPWORDS = {
     "a",
     "an",
@@ -111,6 +118,56 @@ def _query_source_overlap(query_tokens: set[str], source_tokens: set[str]) -> fl
     if not query_tokens or not source_tokens:
         return 0.0
     return len(query_tokens & source_tokens) / len(query_tokens)
+
+
+def _clip_text_by_tokens(text: str, max_tokens: int, model_name: str = "gpt-4o") -> str:
+    if max_tokens <= 0:
+        return ""
+    tokens = encode_string_by_tiktoken(text or "", model_name=model_name)
+    if len(tokens) <= max_tokens:
+        return text
+    return decode_tokens_by_tiktoken(tokens[:max_tokens], model_name=model_name).rstrip() + "..."
+
+
+def _split_evidence_sentences(content: str) -> list[str]:
+    sentences = []
+    for candidate in _EVIDENCE_SENTENCE_SPLIT_PATTERN.split(content or ""):
+        candidate = " ".join(candidate.strip().split())
+        if candidate:
+            sentences.append(candidate)
+    if sentences:
+        return sentences
+    fallback = " ".join((content or "").strip().split())
+    return [fallback] if fallback else []
+
+
+def _answer_like_bonus(sentence: str) -> float:
+    return 1.0 if _ANSWER_LIKE_PATTERN.search(sentence or "") else 0.0
+
+
+def _score_evidence_sentence(
+    sentence: str,
+    query_tokens: set[str],
+    terminal_texts: dict[str, str],
+    source_support: int,
+    max_support: int,
+) -> tuple[float, float, float, float]:
+    sentence_tokens = _source_rerank_tokens(sentence)
+    query_overlap = _query_source_overlap(query_tokens, sentence_tokens)
+    terminal_hits = 0
+    for terminal_text in terminal_texts.values():
+        if _terminal_mentioned_in_source(terminal_text, sentence):
+            terminal_hits += 1
+    terminal_coverage = terminal_hits / max(len(terminal_texts), 1)
+    support_score = source_support / max(max_support, 1)
+    answer_bonus = _answer_like_bonus(sentence)
+    total = (
+        3.0 * query_overlap
+        + 2.0 * terminal_coverage
+        + support_score
+        + 0.5 * answer_bonus
+    )
+    return total, query_overlap, terminal_coverage, answer_bonus
 
 
 def _terminal_search_text(node_id: str) -> str:
@@ -694,3 +751,340 @@ async def format_swhc_context(
         len(text_units),
     )
     return entities_context, relations_context, text_units_context
+
+
+async def _collect_swhc_source_units(
+    subgraph: nx.Graph,
+    text_chunks_db: BaseKVStorage[TextChunkSchema],
+    node_scores: dict[str, float],
+    terminals: set[str],
+    query_text: str,
+    query_param: QueryParam,
+) -> list[dict[str, Any]]:
+    terminal_texts = {
+        terminal: _terminal_search_text(terminal)
+        for terminal in terminals
+        if subgraph.has_node(terminal)
+    }
+    query_tokens = _source_rerank_tokens(query_text)
+    source_counter: Counter[str] = Counter()
+    source_node_score: Counter[str] = Counter()
+    source_terminal_hits: dict[str, set[str]] = defaultdict(set)
+
+    for node_id, node_data in subgraph.nodes(data=True):
+        for source_id in _iter_source_ids(node_data.get("source_id")):
+            source_counter[source_id] += 1
+            source_node_score[source_id] += float(node_scores.get(node_id, 0.0))
+            if node_id in terminals:
+                source_terminal_hits[source_id].add(node_id)
+    for _, _, edge_data in subgraph.edges(data=True):
+        for source_id in _iter_source_ids(edge_data.get("source_id")):
+            source_counter[source_id] += 1
+
+    text_units = []
+    max_support = max(source_counter.values(), default=1)
+    max_node_score = max(source_node_score.values(), default=1.0)
+    for source_id, support in source_counter.items():
+        chunk_data = await text_chunks_db.get_by_id(source_id)
+        if chunk_data is None or "content" not in chunk_data:
+            continue
+        content = chunk_data["content"]
+        source_tokens = _source_rerank_tokens(content)
+        terminal_hits = set(source_terminal_hits.get(source_id, set()))
+        for terminal, terminal_text in terminal_texts.items():
+            if _terminal_mentioned_in_source(terminal_text, content):
+                terminal_hits.add(terminal)
+        query_overlap = _query_source_overlap(query_tokens, source_tokens)
+        terminal_coverage = len(terminal_hits) / max(len(terminals), 1)
+        support_score = support / max_support
+        node_score = source_node_score[source_id] / max_node_score if max_node_score else 0.0
+        length_penalty = min(len(source_tokens) / 512.0, 2.0)
+        rerank_score = (
+            query_param.swhc_source_support_weight * support_score
+            + query_param.swhc_source_query_weight * query_overlap
+            + query_param.swhc_source_terminal_weight * terminal_coverage
+            + query_param.swhc_source_node_weight * node_score
+            - query_param.swhc_source_length_penalty * length_penalty
+        )
+        text_units.append(
+            {
+                "id": source_id,
+                "support": support,
+                "content": content,
+                "chunk_order_index": chunk_data.get("chunk_order_index", 0),
+                "rerank_score": rerank_score,
+                "query_overlap": query_overlap,
+                "terminal_coverage": terminal_coverage,
+            }
+        )
+
+    if query_param.swhc_source_rerank:
+        text_units.sort(
+            key=lambda item: (
+                -item["rerank_score"],
+                -item["support"],
+                -item["query_overlap"],
+                -item["terminal_coverage"],
+                item["chunk_order_index"],
+                item["id"],
+            )
+        )
+    else:
+        text_units.sort(
+            key=lambda item: (-item["support"], item["chunk_order_index"], item["id"])
+        )
+    return truncate_list_by_token_size(
+        text_units,
+        key=lambda item: item["content"],
+        max_token_size=query_param.max_token_for_text_unit,
+    )
+
+
+def _build_relevant_evidence_context(
+    text_units: list[dict[str, Any]],
+    terminals: set[str],
+    query_text: str,
+    query_param: QueryParam,
+) -> str:
+    terminal_texts = {
+        terminal: _terminal_search_text(terminal)
+        for terminal in terminals
+    }
+    query_tokens = _source_rerank_tokens(query_text)
+    max_support = max([item["support"] for item in text_units], default=1)
+    candidates = []
+    for source_order, item in enumerate(text_units):
+        for sentence_index, sentence in enumerate(_split_evidence_sentences(item["content"])):
+            clipped = _clip_text_by_tokens(sentence, 120)
+            score, query_overlap, terminal_coverage, answer_bonus = _score_evidence_sentence(
+                clipped,
+                query_tokens,
+                terminal_texts,
+                int(item["support"]),
+                max_support,
+            )
+            candidates.append(
+                {
+                    "source_id": item["id"],
+                    "evidence": clipped,
+                    "score": score,
+                    "query_overlap": query_overlap,
+                    "terminal_coverage": terminal_coverage,
+                    "answer_bonus": answer_bonus,
+                    "support": item["support"],
+                    "source_order": source_order,
+                    "sentence_index": sentence_index,
+                }
+            )
+    candidates.sort(
+        key=lambda item: (
+            -item["score"],
+            -item["query_overlap"],
+            -item["terminal_coverage"],
+            -item["answer_bonus"],
+            -item["support"],
+            item["source_order"],
+            item["sentence_index"],
+            item["source_id"],
+        )
+    )
+
+    selected = []
+    used_text = set()
+    used_tokens = 0
+    for item in candidates:
+        if len(selected) >= query_param.swhc_v0_evidence_topk:
+            break
+        dedupe_key = item["evidence"].lower()
+        if dedupe_key in used_text:
+            continue
+        evidence_tokens = len(encode_string_by_tiktoken(item["evidence"]))
+        if used_tokens + evidence_tokens > query_param.swhc_v0_evidence_max_tokens:
+            continue
+        used_text.add(dedupe_key)
+        used_tokens += evidence_tokens
+        selected.append(item)
+
+    evidence_section_list = [["id", "source_id", "evidence"]]
+    for index, item in enumerate(selected):
+        evidence_section_list.append([index, item["source_id"], item["evidence"]])
+    return list_of_list_to_csv(evidence_section_list)
+
+
+def _best_evidence_hint(
+    source_ids: set[str],
+    source_content_by_id: dict[str, str],
+    query_tokens: set[str],
+    terminal_texts: dict[str, str],
+    source_support_by_id: dict[str, int],
+) -> str:
+    candidates = []
+    max_support = max(source_support_by_id.values(), default=1)
+    for source_id in sorted(source_ids):
+        for sentence_index, sentence in enumerate(
+            _split_evidence_sentences(source_content_by_id.get(source_id, ""))
+        ):
+            clipped = _clip_text_by_tokens(sentence, 80)
+            score, query_overlap, terminal_coverage, answer_bonus = _score_evidence_sentence(
+                clipped,
+                query_tokens,
+                terminal_texts,
+                source_support_by_id.get(source_id, 0),
+                max_support,
+            )
+            candidates.append(
+                (
+                    -score,
+                    -query_overlap,
+                    -terminal_coverage,
+                    -answer_bonus,
+                    source_id,
+                    sentence_index,
+                    clipped,
+                )
+            )
+    if not candidates:
+        return ""
+    candidates.sort()
+    return candidates[0][-1]
+
+
+async def format_swhc_context_v0(
+    swhc_result: SWHCResult,
+    text_chunks_db: BaseKVStorage[TextChunkSchema],
+    query_param: QueryParam,
+    query_text: str = "",
+) -> tuple[str, str, str, str]:
+    subgraph = swhc_result.subgraph
+    if subgraph.number_of_nodes() == 0:
+        return "", "", "", ""
+
+    node_scores = subgraph.graph.get("node_scores", {})
+    terminals = set(swhc_result.debug.get("terminals", []))
+    terminal_texts = {
+        terminal: _terminal_search_text(terminal)
+        for terminal in terminals
+        if subgraph.has_node(terminal)
+    }
+    query_tokens = _source_rerank_tokens(query_text)
+
+    entity_nodes = [
+        (node_id, data)
+        for node_id, data in subgraph.nodes(data=True)
+        if data.get("role") == "entity"
+    ]
+    entity_nodes.sort(
+        key=lambda item: (node_scores.get(item[0], 0.0), subgraph.degree(item[0])),
+        reverse=True,
+    )
+    entity_token_count = sum(
+        len(encode_string_by_tiktoken(f"{node_id} {node_data.get('description', '')}"))
+        for node_id, node_data in entity_nodes
+    )
+    if entity_token_count > query_param.max_token_for_local_context:
+        logger.warning(
+            "SWHC v0 exports all %s entity nodes (%s tokens), exceeding legacy budget %s",
+            len(entity_nodes),
+            entity_token_count,
+            query_param.max_token_for_local_context,
+        )
+
+    hyperedge_nodes = [
+        (node_id, data)
+        for node_id, data in subgraph.nodes(data=True)
+        if data.get("role") == "hyperedge"
+    ]
+    hyperedge_nodes.sort(
+        key=lambda item: (node_scores.get(item[0], 0.0), item[1].get("weight", 0.0)),
+        reverse=True,
+    )
+    hyperedge_token_count = sum(
+        len(encode_string_by_tiktoken(node_id)) for node_id, _ in hyperedge_nodes
+    )
+    if hyperedge_token_count > query_param.max_token_for_global_context:
+        logger.warning(
+            "SWHC v0 exports all %s relationship nodes (%s tokens), exceeding legacy budget %s",
+            len(hyperedge_nodes),
+            hyperedge_token_count,
+            query_param.max_token_for_global_context,
+        )
+
+    text_units = await _collect_swhc_source_units(
+        subgraph,
+        text_chunks_db,
+        node_scores,
+        terminals,
+        query_text,
+        query_param,
+    )
+    source_content_by_id = {item["id"]: item["content"] for item in text_units}
+    source_support_by_id = {item["id"]: int(item["support"]) for item in text_units}
+    evidence_context = _build_relevant_evidence_context(
+        text_units,
+        terminals,
+        query_text,
+        query_param,
+    )
+
+    entities_section_list = [["id", "entity", "type", "description", "supporting_sources"]]
+    for index, (node_id, node_data) in enumerate(entity_nodes):
+        supporting_sources = "|".join(sorted(_iter_source_ids(node_data.get("source_id"))))
+        entities_section_list.append(
+            [
+                index,
+                node_id,
+                node_data.get("entity_type", "UNKNOWN"),
+                node_data.get("description", "UNKNOWN"),
+                supporting_sources,
+            ]
+        )
+    entities_context = list_of_list_to_csv(entities_section_list)
+
+    entity_node_ids = {node_id for node_id, _ in entity_nodes}
+    relations_section_list = [
+        ["id", "hyperedge", "related_entities", "supporting_sources", "evidence_hint"]
+    ]
+    for index, (node_id, node_data) in enumerate(hyperedge_nodes):
+        related_entities = sorted(
+            [
+                neighbor
+                for neighbor in subgraph.neighbors(node_id)
+                if neighbor in entity_node_ids
+                and subgraph.nodes[neighbor].get("role") == "entity"
+            ]
+        )
+        supporting_sources = set(_iter_source_ids(node_data.get("source_id")))
+        for neighbor in related_entities:
+            edge_data = subgraph.get_edge_data(node_id, neighbor) or {}
+            supporting_sources.update(_iter_source_ids(edge_data.get("source_id")))
+        evidence_hint = _best_evidence_hint(
+            supporting_sources,
+            source_content_by_id,
+            query_tokens,
+            terminal_texts,
+            source_support_by_id,
+        )
+        relations_section_list.append(
+            [
+                index,
+                node_id,
+                "|".join(related_entities),
+                "|".join(sorted(supporting_sources)),
+                evidence_hint,
+            ]
+        )
+    relations_context = list_of_list_to_csv(relations_section_list)
+
+    text_units_section_list = [["id", "source_id", "content"]]
+    for index, item in enumerate(text_units):
+        text_units_section_list.append([index, item["id"], item["content"]])
+    text_units_context = list_of_list_to_csv(text_units_section_list)
+
+    logger.info(
+        "SWHC v0 query uses %s evidence rows, %s entities, %s relations, %s text units",
+        max(len(evidence_context.splitlines()) - 1, 0),
+        len(entity_nodes),
+        len(hyperedge_nodes),
+        len(text_units),
+    )
+    return evidence_context, entities_context, relations_context, text_units_context

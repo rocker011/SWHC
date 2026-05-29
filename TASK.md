@@ -1,6 +1,6 @@
 # TASK.md
 
-最后更新：`2026-05-23`
+最后更新：`2026-05-27`
 
 ## 当前阶段
 
@@ -70,6 +70,18 @@
    - 同一旧索引、同一固定关键词下的 context 输出一致
    - 报告：`reports/parity/hotpotqa_probe/parity_report.json`
 
+10. 已实现 `SWHC-new v0` 工程入口：
+    - 新增 `SWHC-legacy` 与 `SWHC-new` 独立方法入口。
+    - `SWHC-new v0` 复用 legacy solver，只替换 context export。
+    - v0 context 增加 `Relevant Evidence`，并保留 selected subgraph 的完整 `Entities / Relationships`。
+    - `hotpotqa_probe` smoke test 已通过，且两类结果目录保持分离。
+
+11. 已完成 `hotpotqa_64` shortest-answer-span 四方法对比：
+    - `HybridRAG`：EM 0.6562，F1 0.8002，R-Sim 0.6028，平均 context tokens 11473.0。
+    - `HyperGraphRAG`：EM 0.7188，F1 0.8402，R-Sim 0.6754，平均 context tokens 17236.9。
+    - `SWHC-legacy`：EM 0.6875，F1 0.8420，R-Sim 0.6847，平均 context tokens 2743.5。
+    - `SWHC-new`：EM 0.6875，F1 0.8344，R-Sim 0.7157，平均 context tokens 3572.8。
+
 ## P0：当前必须先做
 
 1. **冻结 legacy baseline**
@@ -86,10 +98,11 @@
      - `SWHC-new`
    - 模型：`deepseek-v4-flash`
    - 模式：非 thinking
+   - 输出：短答案 span，`HGRAG_SHORTEST_ANSWER_SPAN=true`
    - LLM judge：关闭，`HGRAG_ENABLE_LLM_JUDGE=false`
    - source rerank：默认关闭，`HGRAG_SWHC_SOURCE_RERANK=false`
 
-3. **实现 SWHC-new 入口**
+3. **验证 SWHC-new 入口**
    - 目标：让优化版本和 legacy 版本可并行运行、可直接对比。
    - 输出建议：
      - `evaluation/results/SWHC-legacy/hotpotqa_64/`
@@ -174,8 +187,8 @@
 
 ## 当前缺口
 
-- `SWHC-new` 独立入口尚未实现。
-- `hotpotqa_64` 的 V4-Flash 四方法对比尚未运行。
+- `SWHC-new v0` 已实现，并已完成 `hotpotqa_probe` smoke test 与 `hotpotqa_64` 四方法短输出对比。
+- `SWHC-new v0` 在本轮中 R-Sim 高于 legacy，但 EM 持平、F1 略低；下一步需要做失败样本和 answer exposure 诊断。
 - official `GraphRAG` 仍缺少 `evaluation/expr_official_graphrag/<dataset>/` workspace。
 - `LightRAG`、`PathRAG` 尚未接入；优化阶段暂不处理。
 - 目标公开数据集 `2WikiMultiHopQA`、`MuSiQue`、`PopQA` 尚未准备；优化阶段先不扩展。
@@ -188,6 +201,7 @@
 - 当前优化阶段固定使用 `deepseek-v4-flash` 非 thinking 模式。
 - 当前优化阶段固定数据集为 `hotpotqa_64`。
 - 当前优化阶段固定方法为 `HybridRAG`、`HyperGraphRAG`、`SWHC-legacy`、`SWHC-new`。
+- 当前 `hotpotqa_64` 默认使用 shortest-answer-span 短输出：`HGRAG_SHORTEST_ANSWER_SPAN=true`。
 - 不重跑已经完成的大型 pipeline，除非明确需要。
 - 修改 SWHC objective、edge weighting、terminal selection、solver、source rerank 时，必须说明旧结果不可直接比较。
 - `HGRAG_SWHC_SOURCE_RERANK` 默认保持 `false`。

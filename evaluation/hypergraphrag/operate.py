@@ -33,7 +33,7 @@ from .base import (
 )
 from .graphrag_local import build_graphrag_context
 from .prompt import GRAPH_FIELD_SEP, PROMPTS
-from .swhc import format_swhc_context, solve_swhc
+from .swhc import format_swhc_context, format_swhc_context_v0, solve_swhc
 
 _SUMMARY_LLM_FUNC_CACHE = {}
 
@@ -522,12 +522,18 @@ async def kg_query(
     cache_mode = f"{query_param.mode}:{query_param.subgraph_selector}"
     if query_param.subgraph_selector == "swhc":
         cache_mode = (
-            f"{cache_mode}:source_rerank={int(query_param.swhc_source_rerank)}"
+            f"{cache_mode}:variant={query_param.swhc_variant}"
+            f":source_rerank={int(query_param.swhc_source_rerank)}"
             f":sw={query_param.swhc_source_support_weight}"
             f":qw={query_param.swhc_source_query_weight}"
             f":tw={query_param.swhc_source_terminal_weight}"
             f":nw={query_param.swhc_source_node_weight}"
             f":lp={query_param.swhc_source_length_penalty}"
+            f":text_tokens={query_param.max_token_for_text_unit}"
+            f":local_tokens={query_param.max_token_for_local_context}"
+            f":global_tokens={query_param.max_token_for_global_context}"
+            f":ev_topk={query_param.swhc_v0_evidence_topk}"
+            f":ev_tokens={query_param.swhc_v0_evidence_max_tokens}"
         )
     args_hash = compute_args_hash(cache_mode, query)
     cached_response, quantized, min_val, max_val = await handle_cache(
@@ -730,6 +736,36 @@ async def _build_query_context(
             )
             if query_param.swhc_return_debug:
                 logger.info("SWHC debug: %s", json.dumps(swhc_result.debug, ensure_ascii=False))
+            if query_param.swhc_variant == "v0":
+                (
+                    evidence_context,
+                    entities_context,
+                    relations_context,
+                    text_units_context,
+                ) = await format_swhc_context_v0(
+                    swhc_result,
+                    text_chunks_db,
+                    query_param,
+                    query_text=original_query or " ".join(query),
+                )
+                return f"""
+-----Relevant Evidence-----
+```csv
+{evidence_context}
+```
+-----Entities-----
+```csv
+{entities_context}
+```
+-----Relationships-----
+```csv
+{relations_context}
+```
+-----Sources-----
+```csv
+{text_units_context}
+```
+"""
             entities_context, relations_context, text_units_context = await format_swhc_context(
                 swhc_result,
                 text_chunks_db,

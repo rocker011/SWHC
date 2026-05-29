@@ -46,6 +46,9 @@ class QueryParam:
     swhc_enable_prune: bool = True
     swhc_budget_nodes: int = 80
     swhc_return_debug: bool = False
+    swhc_variant: Literal["legacy", "v0"] = "legacy"
+    swhc_v0_evidence_topk: int = 6
+    swhc_v0_evidence_max_tokens: int = 800
     swhc_source_rerank: bool = False
     swhc_source_support_weight: float = 0.75
     swhc_source_query_weight: float = 2.0

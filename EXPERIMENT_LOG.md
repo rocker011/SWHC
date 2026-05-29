@@ -1,5 +1,85 @@
 # EXPERIMENT_LOG.md
 
+## 2026-05-27 - hotpotqa_64 shortest-answer-span four-method comparison
+
+- Goal:
+  - Run the fixed optimization-stage comparison on `hotpotqa_64`.
+  - Compare `HybridRAG`, `HyperGraphRAG`, `SWHC-legacy`, and `SWHC-new`.
+  - Use short final answers for HotpotQA scoring.
+- Setup:
+  - Copied the existing read-only upstream index from `D:\PythonProjects\HyperGraphRAG\evaluation\expr\hotpotqa_64` to `evaluation/expr/hotpotqa_64`.
+  - Did not modify the upstream HyperGraphRAG repository.
+  - Installed `simcse` with `--no-deps` in the local `hypergraphrag` conda env so `evaluation/get_score.py` could compute R-Sim without downgrading `scipy`.
+- Commands:
+  - `python script_hybrid_rag.py --data_source hotpotqa_64`
+  - `python script_hypergraphrag.py --data_source hotpotqa_64`
+  - `python script_swhc_legacy.py --data_source hotpotqa_64`
+  - `python script_swhc_new.py --data_source hotpotqa_64`
+  - `HGRAG_SHORTEST_ANSWER_SPAN=true python get_generation.py --data_sources hotpotqa_64 --methods HybridRAG,HyperGraphRAG,SWHC-legacy,SWHC-new`
+  - `HGRAG_ENABLE_LLM_JUDGE=false python get_score.py --data_source hotpotqa_64 --method <method>`
+- Config:
+  - Dataset: `hotpotqa_64`
+  - Model: `deepseek-v4-flash`
+  - Mode: non-thinking OpenAI-compatible chat completions
+  - LLM judge: disabled, `HGRAG_ENABLE_LLM_JUDGE=false`
+  - Output style: shortest answer span, `HGRAG_SHORTEST_ANSWER_SPAN=true`
+  - SWHC source rerank: disabled, `HGRAG_SWHC_SOURCE_RERANK=false`
+  - Query concurrency: `1`
+- Output:
+  - `evaluation/results/HybridRAG/hotpotqa_64/`
+  - `evaluation/results/HyperGraphRAG/hotpotqa_64/`
+  - `evaluation/results/SWHC-legacy/hotpotqa_64/`
+  - `evaluation/results/SWHC-new/hotpotqa_64/`
+- Result summary:
+  - `HybridRAG`: EM 0.6562, F1 0.8002, R-Sim 0.6028, avg context tokens 11473.0, avg consumed tokens 12328.5.
+  - `HyperGraphRAG`: EM 0.7188, F1 0.8402, R-Sim 0.6754, avg context tokens 17236.9, avg consumed tokens 18937.3.
+  - `SWHC-legacy`: EM 0.6875, F1 0.8420, R-Sim 0.6847, avg context tokens 2743.5, avg consumed tokens 3494.2.
+  - `SWHC-new`: EM 0.6875, F1 0.8344, R-Sim 0.7157, avg context tokens 3572.8, avg consumed tokens 4381.2.
+- Evidence diagnostics:
+  - `HybridRAG`: avg sources 12.39, answer-in-source 0.9688.
+  - `HyperGraphRAG`: avg sources 111.92, avg entities 153.22, avg relationships 88.34, answer-in-source 0.9375, answer-in-structure 0.8438.
+  - `SWHC-legacy`: avg sources 2.45, avg entities 4.84, avg relationships 4.36, answer-in-source 0.9062, answer-in-structure 0.5312.
+  - `SWHC-new`: avg sources 2.50, avg entities 4.75, avg relationships 4.36, avg evidence rows 6.00, answer-in-source 0.9062, answer-in-evidence 0.5000, answer-in-structure 0.5000.
+- Analysis:
+  - `HyperGraphRAG` has the best EM, but uses by far the largest context.
+  - `SWHC-legacy` keeps nearly the best F1 while using about 16% of HyperGraphRAG context tokens.
+  - `SWHC-new v0` improves R-Sim over legacy, suggesting evidence exposure helps semantic answer alignment, but this v0 does not improve EM/F1 yet.
+  - The v0 evidence block exposes answer strings in 50% of samples, while answer-in-source remains the same as legacy; this supports the original diagnosis that the selected sources often contain the answer, but v0 exposure is still incomplete.
+  - Compared with `SWHC-legacy`, `SWHC-new` improved F1 on 2 samples, regressed on 3 samples, and tied on 59 samples.
+  - The largest v0 improvement was the Jerry Goldsmith / Ronald Shusett sample; the largest regressions were Buck-Tick origin and the Sonic hedgehog sample.
+- Comparability:
+  - This is an end-to-end run with live keyword extraction and live generation. It is suitable as the current four-method smoke/optimization comparison, but not a strict export-only ablation between `SWHC-legacy` and `SWHC-new`.
+  - `SWHC-new` changes context export, so it is not directly equivalent to legacy.
+- Next action:
+  - Inspect failed and regressed samples between `SWHC-legacy` and `SWHC-new`.
+  - Improve deterministic evidence extraction before changing terminal selection, objective, or semantic weighting.
+
+## 2026-05-27 - SWHC-new v0 context export implementation
+
+- Goal:
+  - Implement the first optimization variant without changing the legacy SWHC solver.
+  - Keep `SWHC-legacy` and `SWHC-new` result directories separate.
+- Code version:
+  - Adds `swhc_variant="v0"` for the evaluation-side HyperGraphRAG query path.
+- Changes:
+  - Added `SWHC-legacy` and `SWHC-new` evaluation entrypoints.
+  - Added v0 context export with `Relevant Evidence`, source provenance, and untruncated `Entities / Relationships`.
+  - Added cache-key fields for `swhc_variant` and v0 evidence settings.
+  - Added unit coverage for legacy export shape, v0 provenance, untruncated structure export, and v0 context section order.
+- Config:
+  - `SWHC-new` uses the legacy solver.
+  - `SWHC-new` changes only context export.
+  - `HGRAG_SWHC_SOURCE_RERANK=false` remains the default.
+- Comparability:
+  - 本次改动会影响 SWHC-new 结果与旧结果的直接可比性。
+  - `SWHC-legacy` remains the frozen baseline for parity comparisons.
+- Outcome:
+  - Implementation added.
+  - `hotpotqa_probe` smoke tests passed for both `SWHC-legacy` and `SWHC-new`.
+  - `SWHC-new` context contains `Relevant Evidence`, `source_id` provenance, and relationship evidence hints.
+- Next action:
+  - Run the fixed `hotpotqa_64` four-method comparison.
+
 ## 2026-05-23 - 文档结构收敛
 
 - Goal:
